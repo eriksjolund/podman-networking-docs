@@ -10,12 +10,12 @@ Listening TCP/UDP sockets
 
 | method | source address preserved | native perfomance | support for binding to specific network device | minimum port number |
 |-|-|-|-|-|
-| [socket activation (systemd user service)](#socket-activation-systemd-user-service) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-draft#configure-ip_unprivileged_port_start) |
+| [socket activation (systemd user service)](#socket-activation-systemd-user-service) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start) |
 | [socket activation (systemd system service with User=)](#socket-activation-systemd-system-service-with-user) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | 0 |
-| pasta             | :heavy_check_mark: | | :heavy_check_mark: | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-draft#configure-ip_unprivileged_port_start) |
-| slirp4netns + port_handler=slirp4netns | :heavy_check_mark: | | | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-draft#configure-ip_unprivileged_port_start) |
-| slirp4netns + port_handler=rootlesskit | | | | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-draft#configure-ip_unprivileged_port_start) |
-| host | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-draft#configure-ip_unprivileged_port_start) |
+| pasta             | :heavy_check_mark: | | :heavy_check_mark: | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start) |
+| slirp4netns + port_handler=slirp4netns | :heavy_check_mark: | | | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start) |
+| slirp4netns + port_handler=rootlesskit | | | | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start) |
+| host | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start) |
 
 ### Source address preserved
 
