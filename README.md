@@ -590,9 +590,13 @@ netavark
 
 ### CNI
 
-CNI is deprecated and will be removed in Podman 5.0
+The network backend CNI is deprecated and will be removed in Podman 5.0
 
 ### Netavark
+
+_Netavark_ is the default network backend.
+
+**Example** Create a network and run an nginx container
 
 Create the network _mynyet_
 
