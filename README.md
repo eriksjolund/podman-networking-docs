@@ -443,6 +443,12 @@ sudo sysctl --system
 
 The setting is system-wide so changing it impacts all users on the system.
 
+Giving this privilege to all users on the computer might not be what you want
+because often you already know which systemd service should be listening on a privileged port.
+If the software supports _socket activation_, an alternative is to set up a
+systemd system service with `User=`. For details, see the
+section [_Socket activation (systemd system service with User=)_](#socket-activation-systemd-system-service-with-user)
+
 ## Outbound TCP/UDP connections
 
 ### Outbound TCP/UDP connections to the internet
@@ -537,34 +543,16 @@ See [Socket activation](https://github.com/containers/podman/blob/main/docs/tuto
 
 ### Socket activation (systemd system service with `User=`)
 
-:warning: Running Podman in a systemd system service with `User=` is not
-yet supported (see feature request https://github.com/containers/podman/issues/12778)
-but if you are willing to experiment (that is to patch and rebuild Podman), you might get this to work.
+Systemd system service (User=) and socket activation makes it possible for rootless Podman to use privileged ports.
 
-Although root privileges are required to create a system system service, note that rootless Podman is being used when `User=` is set under the `[Service]` section in the service unit file.
+For details of how to use socket-actived nginx, see for instance
+Example 3, Example 4, Example 5, Example 6 in the repo https://github.com/eriksjolund/podman-nginx-socket-activation
 
-Socket activation of a systemd system service is set up by creating two files
+:warning: How well this solution works is currently unknown. What are the pros and cons? Will it work for other software than nginx? More testing is needed.
 
-* _/etc/systemd/system/example.socket_
-* _/etc/systemd/system/example.service_
-
-and running
-
-```
-systemctl daemon-reload
-systemctl start example.socket
-```
-and possibly
-
-```
-systemctl enable example.socket
-```
-to start the socket automatically after a reboot.
-
-See also https://github.com/containers/podman/issues/12778#issuecomment-1586255815
-which describes a successful experiment to run Podman in a systemd system service
-with `User=`. The experiment depends on a patched Podman. The suggested approach also needs to
-add more security checks to be safe.
+There is a [Podman feature request](https://github.com/containers/podman/discussions/20573)
+for adding Podman support for `User=` in systemd system services.
+The feature request was moved into a GitHub discussion.
 
 ### Pasta
 
