@@ -19,15 +19,6 @@ Listening TCP/UDP sockets
 
 ### Source address preserved
 
-| method | source address preserved |
-|-|-|
-| socket activation (systemd user service) | :heavy_check_mark:  |
-| socket activation (systemd system service) | :heavy_check_mark: |
-| pasta | :heavy_check_mark: |
-| slirp4netns + port_handler=slirp4netns | :heavy_check_mark: |
-| slirp4netns + port_handler=rootlesskit |  |
-| host | :heavy_check_mark: |
-
 Example:
 
 If the source address __is preserved__ in the incoming TCP connection,
