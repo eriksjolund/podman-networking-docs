@@ -578,3 +578,57 @@ Quote from [podman run man page](https://docs.podman.io/en/latest/markdown/podma
 _"The host mode gives the container full access to local system services such as D-bus and is therefore considered insecure"._
 
 See also the article [_[CVE-2020–15257] Don’t use --net=host . Don’t use spec.hostNetwork_](https://medium.com/nttlabs/dont-use-host-network-namespace-f548aeeef575) that explains why running containers in the host network namespace is insecure.
+
+## Network backends
+
+Check which network backend is in use
+
+```
+$ podman info --format {{.Host.NetworkBackend}}
+netavark
+```
+
+### CNI
+
+CNI is deprecated and will be removed in Podman 5.0
+
+### Netavark
+
+Create the network _mynyet_
+
+```
+$ podman network create mynet
+```
+
+Start the container __docker.io/library/nginx__ let it be connected to the network _mynet_
+
+```
+$ podman run -d -q --network mynet docker.io/library/nginx
+19f812cfbb43c022529b84bb9914cda2b16e55ef09c0bc8e937afddfc803f812
+```
+
+Check the IP address
+
+```
+$ podman container inspect -l --format "{{(index .NetworkSettings.Networks \"mynet\").IPAddress}}"
+10.89.0.2
+```
+
+Try to fetch a web page from nginx
+
+```
+$ curl --max-time 3 10.89.0.2
+curl: (28) Connection timed out after 3000 milliseconds
+```
+__result:__ curl was not able to connect to the web server
+
+Join the rootless network namespace used for netavark networking before running the curl command
+
+```
+$ podman unshare --rootless-netns curl --max-time 3 10.89.0.2 | head -4
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+```
+__result:__ curl fetched the web page.
