@@ -543,7 +543,7 @@ See [Socket activation](https://github.com/containers/podman/blob/main/docs/tuto
 
 ### Socket activation (systemd system service with `User=`)
 
-Systemd system service (User=) and socket activation makes it possible for rootless Podman to use privileged ports.
+Systemd system service (`User=`) and socket activation makes it possible for rootless Podman to use privileged ports.
 
 For details of how to use socket-actived nginx, see for instance
 Example 3, Example 4, Example 5, Example 6 in the repo https://github.com/eriksjolund/podman-nginx-socket-activation
