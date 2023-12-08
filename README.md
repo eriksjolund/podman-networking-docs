@@ -558,6 +558,8 @@ The feature request was moved into a GitHub discussion.
 
 Pasta is similar to Slirp4netns. Pasta is generally the better choice because it is often faster and has more features than slirp4netns.
 
+Pasta will soon become the new default instead of Slirp4netns (see Jira issue [RUN-1953](https://issues.redhat.com/projects/RUN/issues/RUN-1953?filter=allopenissues)).
+
 See the [`--network`](https://docs.podman.io/en/latest/markdown/podman-run.1.html#network-mode-net) option.
 See also the pasta web page https://passt.top/
 
