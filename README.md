@@ -556,16 +556,31 @@ The feature request was moved into a GitHub discussion.
 
 ### Pasta
 
-Pasta is similar to Slirp4netns. Pasta is generally the better choice because it is often faster and has more features than slirp4netns.
+Pasta is enabled by default if no `--network` option is provided to `podman run`.
+Pasta is generally the better choice because it is often faster and has more features than slirp4netns.
 
-Pasta will soon become the new default instead of Slirp4netns (see Jira issue [RUN-1953](https://issues.redhat.com/projects/RUN/issues/RUN-1953?filter=allopenissues)).
+On RPM-based systems the executable pasta is in the _passt_ RPM package.
+
+Show the RPM package for the executable `/usr/bin/pasta`
+```
+$ rpm -qf --queryformat "%{NAME}\n" /usr/bin/pasta
+passt
+```
+The RPM package _passt-selinux_ contains the SELinux configuration for pasta.
+
+To install pasta on Fedora run
+
+```
+$ sudo dnf install -y passt passt-selinux
+```
 
 See the [`--network`](https://docs.podman.io/en/latest/markdown/podman-run.1.html#network-mode-net) option.
 See also the pasta web page https://passt.top/
 
 ### Slirp4netns
 
-slirp4netns is enabled by default if no `--network` option is provided to `podman run`.
+Slirp4netns is similar to Pasta but is slower and has less functionality.
+Slirp4netns was the default before Podman 5.0.0 (released March 2024).
 
 The two port forwarding modes allowed with slirp4netns are described in 
 https://news.ycombinator.com/item?id=33255771
