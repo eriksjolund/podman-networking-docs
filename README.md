@@ -578,9 +578,34 @@ See the [`--network`](https://docs.podman.io/en/latest/markdown/podman-run.1.htm
 See also the pasta web page https://passt.top/
 
 
-#### Check if Pasta or Slirp4netns is the default
+#### Show the default rootlessNetworkCmd
 
-Most probably there is an easier way of how to do this
+Pasta is the default rootlessNetworkCmd since Podman 5.0.0 (released March 2024).
+
+To show the rootlessNetworkCmd that is configured to be used by default, run
+
+```
+podman info -f '{{.Host.RootlessNetworkCmd}}'
+```
+
+If __jq__ is installed on the computer, then the same result is produced with
+
+```
+podman info -f json | jq -r .host.rootlessNetworkCmd
+```
+
+If __podman info__ does not support the field `RootlessNetworkCmd`, then
+it's possible to find out the information by running
+
+```
+podman run -d --rm -p 12345 docker.io/library/alpine sleep 300
+```
+and observing if the helper process is `pasta` or `slirp4netns`.
+
+For details:
+
+<details>
+  <summary>Click me</summary>
 
 1. Set the shell variable `user` to a username that is not in use.
    ```
@@ -625,10 +650,12 @@ Most probably there is an easier way of how to do this
    ```
 1. Optional step: Delete the newly created user
 
+</details>
+
 ### Slirp4netns
 
 Slirp4netns is similar to Pasta but is slower and has less functionality.
-Slirp4netns was the default before Podman 5.0.0 (released March 2024).
+Slirp4netns was the default rootlessNetworkCmd before Podman 5.0.0 (released March 2024).
 
 The two port forwarding modes allowed with slirp4netns are described in 
 https://news.ycombinator.com/item?id=33255771
