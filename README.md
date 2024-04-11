@@ -577,6 +577,54 @@ $ sudo dnf install -y passt passt-selinux
 See the [`--network`](https://docs.podman.io/en/latest/markdown/podman-run.1.html#network-mode-net) option.
 See also the pasta web page https://passt.top/
 
+
+#### Check if Pasta or Slirp4netns is the default
+
+Most probably there is an easier way of how to do this
+
+1. Set the shell variable `user` to a username that is not in use.
+   ```
+   user=mytestuser
+   ```
+1. Create the new user
+   ```
+   sudo useradd $user
+   ```
+1. Open a shell for the new user
+   ```
+   sudo machinectl shell --uid $user
+   ```
+1. Verify that no pasta processes are running as the new user.
+   ```
+   pgrep -u $USER pasta -l
+   ```
+   The command should not list any processes.
+1. Verify that no slirp4netns processes are running as the new user.
+   ```
+   pgrep -u $USER slirp4netns -l
+   ```
+   The command should not list any processes.
+1. Run container
+   ```
+   podman run -d --rm -p 12345 docker.io/library/alpine sleep 300
+   ```
+   (12345 is just an arbitrary container port number)
+1. Check if there are any pasta processes running as the new user.
+   ```
+   pgrep -u $USER pasta -l
+   ```
+   If the command lists any processes, then pasta is detected as being the default.
+1. Check if there are any slirp4netns processes running as the new user.
+   ```
+   pgrep -u $USER slirp4netns -l
+   ```
+   If the command lists any processes, then slirp4netns is detected as being the default.
+1. Exit the shell
+   ```
+   exit
+   ```
+1. Optional step: Delete the newly created user
+
 ### Slirp4netns
 
 Slirp4netns is similar to Pasta but is slower and has less functionality.
