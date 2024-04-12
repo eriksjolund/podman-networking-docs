@@ -682,7 +682,9 @@ netavark
 
 ### CNI
 
-The network backend CNI is deprecated and will be removed in Podman 5.0
+The network backend CNI ([Container Network Interface](https://www.cni.dev/)) was removed in Podman 5.0.0.
+The reasons for replacing CNI with Netavark are described in the article
+[_Podman 4.0's new network stack: What you need to know_](https://www.redhat.com/sysadmin/podman-new-network-stack).
 
 ### Netavark
 
