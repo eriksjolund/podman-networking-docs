@@ -698,7 +698,7 @@ Create the network _mynyet_
 $ podman network create mynet
 ```
 
-Start the container __docker.io/library/nginx__ let it be connected to the network _mynet_
+Start the container __docker.io/library/nginx__ and let it be connected to the network _mynet_
 
 ```
 $ podman run -d -q --network mynet docker.io/library/nginx
