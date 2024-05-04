@@ -730,3 +730,98 @@ $ podman unshare --rootless-netns curl --max-time 3 10.89.0.2 | head -4
 <title>Welcome to nginx!</title>
 ```
 __result:__ curl fetched the web page.
+
+## Capture network traffic
+
+The pasta option __--pcap__ enables capturing of network traffic.
+
+__Example__
+
+Capture a curl request with pasta to the file _myfile.pcap_.
+Use `tshark` to analyse the file _myfile.pcap_.
+
+1. Fetch web page from http://podman.io with `curl`
+   ```
+   podman run \
+      --rm \
+      --network=pasta:--pcap,myfile.pcap \
+      docker.io/library/fedora curl http://podman.io
+   ```
+   pasta is configured to capture network traffic to the file _myfile.pcap_
+
+
+Build tshark container image
+
+
+1. Create directory
+   ```
+   mkdir ctr
+   ```
+1. Create the file _ctr/Containerfile_ with the contents
+   ```
+   FROM docker.io/library/fedora
+   RUN dnf install -y tshark && dnf clean all
+   ```
+1. Build container image _tshark_
+   ```
+   podman build -t tshark ctr/
+   ```
+
+Show HTTP host and HTTP method in HTTP requests
+
+1. Use __tshark__ to analyse the file _myfile.pcap_.
+   ```
+   podman run \
+      --rm
+      -v ./myfile.pcap:/mnt/myfile.pcap:Z,ro \
+      --user 65534:65534 \
+      --userns keep-id:uid=65534,gid=65534 \
+      localhost/tshark \
+        tshark \
+          -r /mnt/myfile.pcap \
+          -T fields \
+          -e http.host \
+          -e http.request.method \
+          -Y http | sort -u
+   ```
+   The command prints the following output
+   ```
+        
+   podman.io    GET
+   ```
+
+Show the destination address of IP packets.
+
+1. Use __tshark__ to analyse the file _myfile.pcap_.
+   ```
+   podman run \
+      --rm
+      -v ./myfile.pcap:/mnt/myfile.pcap:Z,ro \
+      --user 65534:65534 \
+      --userns keep-id:uid=65534,gid=65534 \
+      localhost/tshark \
+        tshark \
+          -r /mnt/myfile.pcap \
+          -T fields \
+          -e ip.dst | sort -u
+   ```
+   The command prints the following output
+   ```
+   
+   10.0.2.15
+   169.254.0.1
+   185.199.110.153
+   ```
+2. Look up DNS A record of _podman.io_
+   ```
+   host -t a podman.io
+   ```
+   The command prints the following output
+   ```
+   podman.io has address 185.199.110.153
+   podman.io has address 185.199.111.153
+   podman.io has address 185.199.108.153
+   podman.io has address 185.199.109.153
+   ```
+   The IP address 185.199.110.153 is also
+   seen in the __tshark__ output in step 1.
