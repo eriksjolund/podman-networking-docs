@@ -496,6 +496,17 @@ podman run --rm \
 	   registry.fedoraproject.org/fedora curl 10.0.2.2:80
 ```
 
+For better performance and security, pasta offers an alternative to using `--map-gw`.
+The option `-T` (`--tcp-ns`) configures TCP port forwarding from the container network namespace to the init network namespace.
+
+```
+podman run --rm \
+           --network=pasta:-T,81:80 \
+           registry.fedoraproject.org/fedora curl 127.0.0.1:81
+```
+
+(Instead of the port number 81, it would also have been possible to specify the port number 80)
+
 ### Connecting to Unix socket on the host
 
 | method | description |
