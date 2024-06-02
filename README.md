@@ -485,7 +485,7 @@ for pasta add the option `--map-gw`
 ```
 podman run --rm \
            --network=pasta:--map-gw \
-           registry.fedoraproject.org/fedora curl localhost 10.0.2.2:80
+           registry.fedoraproject.org/fedora curl 10.0.2.2:80
 ```
 
 and for slirp4netns add the option `slirp4netns:allow_host_loopback=true`
@@ -493,7 +493,7 @@ and for slirp4netns add the option `slirp4netns:allow_host_loopback=true`
 ```
 podman run --rm \
            --network=slirp4netns:allow_host_loopback=true \
-	   registry.fedoraproject.org/fedora curl localhost 10.0.2.2:80
+	   registry.fedoraproject.org/fedora curl 10.0.2.2:80
 ```
 
 ### Connecting to Unix socket on the host
