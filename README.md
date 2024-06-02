@@ -507,6 +507,8 @@ podman run --rm \
 
 (Instead of the port number 81, it would also have been possible to specify the port number 80)
 
+For more information about how to use pasta to connect to a service running on the host, see [GitHub comment](https://github.com/containers/podman/issues/22653#issuecomment-2108922749).
+
 ### Connecting to Unix socket on the host
 
 | method | description |
