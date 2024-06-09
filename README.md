@@ -806,7 +806,7 @@ Use `--network=pasta:-t,auto`
 
 __Side note__: Pasta does not publish TCP ports below [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start).
 
-### Slirp4netns
+## Slirp4netns
 
 Slirp4netns is similar to Pasta but is slower and has less functionality.
 Slirp4netns was the default rootlessNetworkCmd before Podman 5.0.0 (released March 2024).
