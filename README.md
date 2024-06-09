@@ -665,6 +665,147 @@ For details:
 
 </details>
 
+### Publish container ports with pasta
+
+#### example:  use `podman run` option `-p`
+
+The __podman run__ option [`-p`](https://docs.podman.io/en/latest/markdown/podman-run.1.html#publish-p-ip-hostport-containerport-protocol) (`--publish`) publishes
+a container's port, or a range of ports, to the host.
+
+This example shows that if __podman run__ is given `-p 8080:80`, then podman starts _pasta_ with the argument  `-t 8080-8080:80-80` (which is equivalent to `-t 8080:80`)
+
+<details>
+  <summary>Full example: Click me</summary>
+
+1. Run an nginx container and publish container port 80 to host port 8080
+   ```
+   podman run -p 8080:80 \
+              -d \
+              --rm \
+              --name test \
+              docker.io/library/nginx
+   ```
+2. Fetch a web page with curl
+   ```
+   curl -s http://localhost:8080 | head -4
+   ```
+   The command prints the following output
+   ```
+   <!DOCTYPE html>
+   <html>
+   <head>
+   <title>Welcome to nginx!</title>
+   ```
+3. Check command-line arguments of the pasta process
+   ```
+   pgrep -l -a pasta
+   ```
+   The command prints the following output
+   ```
+   851253 /usr/bin/pasta --config-net -t 8080-8080:80-80 --dns-forward 169.254.0.1 -u none -T none -U none --no-map-gw --quiet --netns /run/user/1004/netns/netns-830a424a-0592-361f-556b-7bef910405cf
+   ```
+   __result__: pasta was started with the option `-t 8080-8080:80-80` which is equivalent with `-t 8088:80`
+4. Remove container
+   ```
+   podman container rm -t0 -f test
+   ```
+
+</details>
+
+#### example: use pasta option `-t` to publish a port
+
+Although ports are usually published by providing the __podman run__ option  [`-p`](https://docs.podman.io/en/latest/markdown/podman-run.1.html#publish-p-ip-hostport-containerport-protocol) (`--publish`) , this example shows that passing `--network pasta:-t,8080:80` is roughly equivalent to passing `-p 8080:80`
+
+<details>
+  <summary>Full example: Click me</summary>
+
+1. Run an nginx container and publish container port 80 to host port 8080
+   ```
+   podman run --network pasta:-t,8080:80 \
+              --rm \
+              -d \
+              --name test \
+              docker.io/library/nginx
+   ```
+2. Fetch a web page with curl
+   ```
+   curl -s http://localhost:8080 | head -4
+   ```
+   The command prints the following output
+   ```
+   <!DOCTYPE html>
+   <html>
+   <head>
+   <title>Welcome to nginx!</title>
+   ```
+3. Check command-line arguments of the pasta process
+   ```
+   pgrep -l -a pasta
+   ```
+   The command prints the following output
+   ```
+   851253 /usr/bin/pasta --config-net -t 8088-8088:80-80 --dns-forward 169.254.0.1 -u none -T none -U none --no-map-gw --quiet --netns /run/user/1004/netns/netns-830a424a-0592-361f-556b-7bef910405cf
+   ```
+   __result__: pasta was started with the option `-t 8088-8088:80-80` which is equivalent with `-t 8088:80`
+4. Remove container
+   ```
+   podman container rm -t0 -f test
+   ```
+
+</details>
+
+#### example: use pasta option `-t auto` to let pasta detect listening sockets
+
+Let pasta check once a second for new listening sockets (TCP or UDP) in the container and automatically publish them.
+Use `--network=pasta:-t,auto`
+
+<details>
+  <summary>Full example: Click me</summary>
+
+1. Create directory _dir_
+
+1. Create the file _dir/Containerfile_ with the contents
+   ```
+   FROM docker.io/library/fedora
+   RUN dnf -y install iproute nmap-ncat
+   ```
+1. Build the container image
+   ```
+   podman build -t ncat dir/
+   ```
+1. Run `nc -l 1234` in the container (but first wait 60 seconds)
+   ```
+   podman run --network=pasta:-t,auto \
+              --rm \
+              -d \
+              --name test \
+              localhost/ncat bash -c "sleep 60 && nc -l 1234 && sleep inf"
+   ```
+   The container starts listening on port 1234 after a delay of 60 seconds. The delay
+   is added to demonstrate that pasta will detect that a listening socket is created while
+   the container is running.
+1. Check if the listening TCP port 1234 has been published on the host
+   ```
+   $ ss -tlnp "sport = 1234"
+   State                   Recv-Q                  Send-Q                                   Local Address:Port                                    Peer Address:Port                  Process
+   ```
+   __result:__ No
+1. Wait 60 seonds and check again if the listening TCP port 1234 has been published on the host
+   ```
+   $ ss -tlnp "sport = 1234"
+   State                   Recv-Q                  Send-Q                                   Local Address:Port                                    Peer Address:Port                  Process
+   LISTEN                  0                       128                                            0.0.0.0:1234                                         0.0.0.0:*                      users:(("pasta",pid=2644,fd=146))
+   ```
+   __result:__ Yes. After 60 seconds `nc` in the container started listening on TCP port 1234. Pasta detected this and published TCP port 1234 on the host.
+1. Remove container
+   ```
+   podman container rm -t0 -f test
+   ```
+
+</details>
+
+__Side note__: Pasta does not publish TCP ports below [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start).
+
 ### Slirp4netns
 
 Slirp4netns is similar to Pasta but is slower and has less functionality.
