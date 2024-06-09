@@ -2,9 +2,9 @@
 
 This guide is about how to configure networking when using __rootless Podman__.
 
-## Inbound TCP/UDP connections
+# Inbound TCP/UDP connections
 
-### Overview
+## Overview
 
 Listening TCP/UDP sockets
 
@@ -17,7 +17,7 @@ Listening TCP/UDP sockets
 | slirp4netns + port_handler=rootlesskit | | | | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start) |
 | host | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start) |
 
-### Source address preserved
+## Source address preserved
 
 Example:
 
@@ -47,9 +47,9 @@ For example, if the nginx container is run with __slirp4netns + port_handler=roo
 
 ```
 podman run --network=slirp4netns:port_handler=rootlesskit \
-	   --publish 8080:80 \
-	   --rm \
-	   ghcr.io/nginxinc/nginx:latest
+           --publish 8080:80 \
+           --rm \
+           ghcr.io/nginxinc/nginx:latest
 ```
 
 nginx logs the HTTP request as coming from _10.0.2.2_
@@ -307,7 +307,7 @@ In other words, replace step 4 with
 
 </details>
 
-### Performance
+## Performance
 
 | method | native perfomance |
 |-|-|
@@ -332,7 +332,7 @@ The other methods ordered from fastest to slowest:
 2. slirp4netns + port_handler=rootlesskit
 3. slirp4netns + port_handler=slirp4netns
 
-### Support for binding to specific network device
+## Support for binding to specific network device
 
 | method | support for binding to specific network device |
 |-|-|
@@ -418,7 +418,7 @@ If you want to publish an UDP port instead of a TCP port, replace `-t` with `-u`
 </details>
 
 
-### Configure `ip_unprivileged_port_start`
+## Configure `ip_unprivileged_port_start`
 
 Read the current setting
 
@@ -463,7 +463,7 @@ web server on the internet.
 | slirp4netns | |
 | host | :heavy_check_mark: |
 
-### Outbound TCP/UDP connections to the host's localhost
+## Outbound TCP/UDP connections to the host's localhost
 
 An example of an outbound TCP/UDP connection to the host's localhost
 is when a container downloads a file from a web server on the host that
@@ -493,7 +493,7 @@ and for slirp4netns add the option `slirp4netns:allow_host_loopback=true`
 ```
 podman run --rm \
            --network=slirp4netns:allow_host_loopback=true \
-	   registry.fedoraproject.org/fedora curl 10.0.2.2:80
+           registry.fedoraproject.org/fedora curl 10.0.2.2:80
 ```
 
 For better performance and security, pasta offers an alternative to using `--map-gw`.
@@ -509,7 +509,7 @@ podman run --rm \
 
 For more information about how to use pasta to connect to a service running on the host, see [GitHub comment](https://github.com/containers/podman/issues/22653#issuecomment-2108922749).
 
-### Connecting to Unix socket on the host
+## Connecting to Unix socket on the host
 
 | method | description |
 |-|-|
@@ -534,9 +534,9 @@ are mutually exclusive.
 
 Socket activation can be combined with the other methods.
 
-## Description of the different methods
+# Description of the different methods
 
-### Socket activation (systemd user service)
+## Socket activation (systemd user service)
 
 This method can only be used for container images that has software that supports socket activation.
 
@@ -554,7 +554,7 @@ or a service unit
 
 See [Socket activation](https://github.com/containers/podman/blob/main/docs/tutorials/socket_activation.md#example-socket-activated-echo-server-container-in-a-systemd-service)
 
-### Socket activation (systemd system service with `User=`)
+## Socket activation (systemd system service with `User=`)
 
 Systemd system service (`User=`) and socket activation makes it possible for rootless Podman to use privileged ports.
 
@@ -567,7 +567,7 @@ There is a [Podman feature request](https://github.com/containers/podman/discuss
 for adding Podman support for `User=` in systemd system services.
 The feature request was moved into a GitHub discussion.
 
-### Pasta
+## Pasta
 
 Pasta is enabled by default if no `--network` option is provided to `podman run`.
 Pasta is generally the better choice because it is often faster and has more features than slirp4netns.
@@ -591,7 +591,7 @@ See the [`--network`](https://docs.podman.io/en/latest/markdown/podman-run.1.htm
 See also the pasta web page https://passt.top/
 
 
-#### Show the default rootlessNetworkCmd
+### Show the default rootlessNetworkCmd
 
 Pasta is the default rootlessNetworkCmd since Podman 5.0.0 (released March 2024).
 
@@ -665,7 +665,148 @@ For details:
 
 </details>
 
-### Slirp4netns
+### Publish container ports with pasta
+
+#### example:  use `podman run` option `-p`
+
+The __podman run__ option [`-p`](https://docs.podman.io/en/latest/markdown/podman-run.1.html#publish-p-ip-hostport-containerport-protocol) (`--publish`) publishes
+a container's port, or a range of ports, to the host.
+
+This example shows that if __podman run__ is given `-p 8080:80`, then podman starts _pasta_ with the argument  `-t 8080-8080:80-80` (which is equivalent to `-t 8080:80`)
+
+<details>
+  <summary>Full example: Click me</summary>
+
+1. Run an nginx container and publish container port 80 to host port 8080
+   ```
+   podman run -p 8080:80 \
+              -d \
+              --rm \
+              --name test \
+              docker.io/library/nginx
+   ```
+2. Fetch a web page with curl
+   ```
+   curl -s http://localhost:8080 | head -4
+   ```
+   The command prints the following output
+   ```
+   <!DOCTYPE html>
+   <html>
+   <head>
+   <title>Welcome to nginx!</title>
+   ```
+3. Check command-line arguments of the pasta process
+   ```
+   pgrep -l -a pasta
+   ```
+   The command prints the following output
+   ```
+   851253 /usr/bin/pasta --config-net -t 8080-8080:80-80 --dns-forward 169.254.0.1 -u none -T none -U none --no-map-gw --quiet --netns /run/user/1004/netns/netns-830a424a-0592-361f-556b-7bef910405cf
+   ```
+   __result__: pasta was started with the option `-t 8080-8080:80-80` which is equivalent with `-t 8088:80`
+4. Remove container
+   ```
+   podman container rm -t0 -f test
+   ```
+
+</details>
+
+#### example: use pasta option `-t` to publish a port
+
+Although ports are usually published by providing the __podman run__ option  [`-p`](https://docs.podman.io/en/latest/markdown/podman-run.1.html#publish-p-ip-hostport-containerport-protocol) (`--publish`) , this example shows that passing `--network pasta:-t,8080:80` is roughly equivalent to passing `-p 8080:80`
+
+<details>
+  <summary>Full example: Click me</summary>
+
+1. Run an nginx container and publish container port 80 to host port 8080
+   ```
+   podman run --network pasta:-t,8080:80 \
+              --rm \
+              -d \
+              --name test \
+              docker.io/library/nginx
+   ```
+2. Fetch a web page with curl
+   ```
+   curl -s http://localhost:8080 | head -4
+   ```
+   The command prints the following output
+   ```
+   <!DOCTYPE html>
+   <html>
+   <head>
+   <title>Welcome to nginx!</title>
+   ```
+3. Check command-line arguments of the pasta process
+   ```
+   pgrep -l -a pasta
+   ```
+   The command prints the following output
+   ```
+   851253 /usr/bin/pasta --config-net -t 8088-8088:80-80 --dns-forward 169.254.0.1 -u none -T none -U none --no-map-gw --quiet --netns /run/user/1004/netns/netns-830a424a-0592-361f-556b-7bef910405cf
+   ```
+   __result__: pasta was started with the option `-t 8088-8088:80-80` which is equivalent with `-t 8088:80`
+4. Remove container
+   ```
+   podman container rm -t0 -f test
+   ```
+
+</details>
+
+#### example: use pasta option `-t auto` to let pasta detect listening sockets
+
+Let pasta check once a second for new listening sockets (TCP or UDP) in the container and automatically publish them.
+Use `--network=pasta:-t,auto`
+
+<details>
+  <summary>Full example: Click me</summary>
+
+1. Create directory _dir_
+
+1. Create the file _dir/Containerfile_ with the contents
+   ```
+   FROM docker.io/library/fedora
+   RUN dnf -y install iproute nmap-ncat
+   ```
+1. Build the container image
+   ```
+   podman build -t ncat dir/
+   ```
+1. Run `nc -l 1234` in the container (but first wait 60 seconds)
+   ```
+   podman run --network=pasta:-t,auto \
+              --rm \
+              -d \
+              --name test \
+              localhost/ncat bash -c "sleep 60 && nc -l 1234 && sleep inf"
+   ```
+   The container starts listening on port 1234 after a delay of 60 seconds. The delay
+   is added to demonstrate that pasta will detect that a listening socket is created while
+   the container is running.
+1. Check if the listening TCP port 1234 has been published on the host
+   ```
+   $ ss -tlnp "sport = 1234"
+   State                   Recv-Q                  Send-Q                                   Local Address:Port                                    Peer Address:Port                  Process
+   ```
+   __result:__ No
+1. Wait 60 seonds and check again if the listening TCP port 1234 has been published on the host
+   ```
+   $ ss -tlnp "sport = 1234"
+   State                   Recv-Q                  Send-Q                                   Local Address:Port                                    Peer Address:Port                  Process
+   LISTEN                  0                       128                                            0.0.0.0:1234                                         0.0.0.0:*                      users:(("pasta",pid=2644,fd=146))
+   ```
+   __result:__ Yes. After 60 seconds `nc` in the container started listening on TCP port 1234. Pasta detected this and published TCP port 1234 on the host.
+1. Remove container
+   ```
+   podman container rm -t0 -f test
+   ```
+
+</details>
+
+__Side note__: Pasta does not publish TCP ports below [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start).
+
+## Slirp4netns
 
 Slirp4netns is similar to Pasta but is slower and has less functionality.
 Slirp4netns was the default rootlessNetworkCmd before Podman 5.0.0 (released March 2024).
@@ -675,7 +816,7 @@ https://news.ycombinator.com/item?id=33255771
 
 See the [`--network`](https://docs.podman.io/en/latest/markdown/podman-run.1.html#network-mode-net) option.
 
-### Host
+## Host
 
 :warning: Using `--network=host` is considered insecure.
 
@@ -684,7 +825,7 @@ _"The host mode gives the container full access to local system services such as
 
 See also the article [_[CVE-2020–15257] Don’t use --net=host . Don’t use spec.hostNetwork_](https://medium.com/nttlabs/dont-use-host-network-namespace-f548aeeef575) that explains why running containers in the host network namespace is insecure.
 
-## Network backends
+# Network backends
 
 Check which network backend is in use
 
@@ -693,13 +834,13 @@ $ podman info --format {{.Host.NetworkBackend}}
 netavark
 ```
 
-### CNI
+## CNI
 
 The network backend CNI ([Container Network Interface](https://www.cni.dev/)) was removed in Podman 5.0.0.
 The reasons for replacing CNI with Netavark are described in the article
 [_Podman 4.0's new network stack: What you need to know_](https://www.redhat.com/sysadmin/podman-new-network-stack).
 
-### Netavark
+## Netavark
 
 _Netavark_ is the default network backend.
 
@@ -744,7 +885,7 @@ $ podman unshare --rootless-netns curl --max-time 3 10.89.0.2 | head -4
 ```
 __result:__ curl fetched the web page.
 
-## Capture network traffic
+# Capture network traffic
 
 The pasta option __--pcap__ enables capturing of network traffic.
 
