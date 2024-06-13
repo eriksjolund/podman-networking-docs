@@ -764,7 +764,7 @@ This example shows that if __podman run__ is given `-p 8080:80`, then podman sta
    ```
    851253 /usr/bin/pasta --config-net -t 8080-8080:80-80 --dns-forward 169.254.0.1 -u none -T none -U none --no-map-gw --quiet --netns /run/user/1004/netns/netns-830a424a-0592-361f-556b-7bef910405cf
    ```
-   __result__: pasta was started with the option `-t 8080-8080:80-80` which is equivalent with `-t 8088:80`
+   __result__: pasta was started with the option `-t 8080-8080:80-80` which is equivalent with `-t 8080:80`
 4. Remove container
    ```
    podman container rm -t0 -f test
