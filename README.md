@@ -17,6 +17,23 @@ Listening TCP/UDP sockets
 | slirp4netns + port_handler=rootlesskit | | | | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start) |
 | host | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start) |
 
+## Valid method combinations
+
+The methods
+
+* pasta
+* pasta + custom network
+* slirp4netns + port_handler=rootlesskit
+* slirp4netns + port_handler=slirp4netns
+* host
+
+are mutually exclusive.
+
+Socket activation can be combined with the other methods.
+
+For example, it is possible to combine __socket activation__ with __pasta + custom network__ to get __source address preserved__ and __native speed__ communication to an HTTP reverse proxy that
+is running on a custom network.
+
 ## Source address preserved
 
 Example:
@@ -520,19 +537,6 @@ The systemd directive [`OpenFile=`](https://www.freedesktop.org/software/systemd
 
 See also
 https://github.com/eriksjolund/podman-OpenFile
-
-## Valid method combinations
-
-The methods
-
-* pasta
-* slirp4netns + port_handler=rootlesskit
-* slirp4netns + port_handler=slirp4netns
-* host
-
-are mutually exclusive.
-
-Socket activation can be combined with the other methods.
 
 # Description of the different methods
 
