@@ -458,7 +458,7 @@ To publish the TCP port 8080 and bind the listening socket to the
 ethernet interface _eth0_ use the configuration lines
 
 ```
-Network=pasta:-t,0.0.0.0%eth0/8080
+Network=pasta:-t,0.0.0.0%%eth0/8080:8080
 ```
 
 under the `[Container]` section in the container file.
@@ -469,7 +469,7 @@ For example the file _/home/test/.config/containers/systemd/nginx.container_ con
    [Container]
    Image=ghcr.io/nginxinc/nginx-unprivileged:latest
    ContainerName=mynginx
-   Network=pasta:-t,0.0.0.0%eth0/8080
+   Network=pasta:-t,0.0.0.0%%eth0/8080:8080
    
    [Install]
    WantedBy=default.target
@@ -479,6 +479,12 @@ If you want to publish an UDP port instead of a TCP port, replace `-t` with `-u`
 
 __Side note 1:__ The quadlet configuration directive `PublishPort=` is not used.
 The port is in this example published by specifying the pasta `-t` option.
+
+__Side note 2:__ Due to how quadlet/systemd parses the configuration line, a percentage character
+needs to be escaped by prepending it with an extra percentage character.
+
+The percentage character should not be escaped when the network option is provided
+as a command-line option for `podman run`, for example `--network=pasta:-t,0.0.0.0%eth0/8080:8080`
 
 -------------
 
