@@ -13,6 +13,7 @@ Listening TCP/UDP sockets
 | [socket activation (systemd user service)](#socket-activation-systemd-user-service) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start) |
 | [socket activation (systemd system service with User=)](#socket-activation-systemd-system-service-with-user) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | 0 |
 | pasta             | :heavy_check_mark: | | :heavy_check_mark: | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start) |
+| pasta + custom network | | | | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start) |
 | slirp4netns + port_handler=slirp4netns | :heavy_check_mark: | | | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start) |
 | slirp4netns + port_handler=rootlesskit | | | | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start) |
 | host | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start) |
@@ -221,6 +222,53 @@ This example uses two computers
 
 </details>
 
+#### example: pasta + custom network - source address not preserved
+
+<details>
+  <summary>Click me</summary>
+
+-------------
+
+Follow the same steps as
+
+[example: pasta - source address preserved](#example-pasta---source-address-preserved)
+
+but replace `Network=pasta` with `Network=mynet.network`. Create the network unit
+file `mynet.network` that defines a custom network. (_mynet_ is an arbitrarily chosen name)
+
+In other words, replace step 4 with
+
+4. Create the file _/home/test/.config/containers/systemd/nginx.container_ containing
+   ```
+   [Container]
+   Image=ghcr.io/nginxinc/nginx-unprivileged:latest
+   ContainerName=mynginx
+   Network=mynet.unit
+   PublishPort=0.0.0.0:8080:8080
+   
+   [Install]
+   WantedBy=default.target
+   ```
+   Create the file _/home/test/.config/containers/systemd/mynet.network_ containing
+   ```
+   [Network]
+   ```
+
+At step 9 you will see that the source address __is not preserved__. Instead of 192.0.2.10 (IP address for _host1.example.com_),
+nginx instead logs the IP address 10.89.0.2.
+
+   ```
+   podman logs mynginx 2> /dev/null | grep "GET /"
+   ```
+   The output should look something like
+   ```
+   10.89.0.2 - - [24/Jun/2024:07:10:59 +0000] "GET / HTTP/1.1" 200 615 "-" "curl/8.6.0" "-"
+   ```
+
+-------------
+
+</details>
+
 #### example: slirp4netns + port_handler=slirp4netns - source address preserved
 
 <details>
@@ -356,6 +404,7 @@ The other methods ordered from fastest to slowest:
 | socket activation (systemd user service) | :heavy_check_mark: |
 | socket activation (systemd system service) | :heavy_check_mark: |
 | pasta | :heavy_check_mark: |
+| pasta + custom network | |
 | slirp4netns + port_handler=slirp4netns | |
 | slirp4netns + port_handler=rootlesskit | |
 | host | :heavy_check_mark: |
