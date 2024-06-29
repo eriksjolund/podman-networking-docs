@@ -459,7 +459,6 @@ ethernet interface _eth0_ use the configuration lines
 
 ```
 Network=pasta:-t,0.0.0.0%eth0/8080
-PublishPorts=0.0.0.0:8080:8080
 ```
 
 under the `[Container]` section in the container file.
@@ -471,13 +470,15 @@ For example the file _/home/test/.config/containers/systemd/nginx.container_ con
    Image=ghcr.io/nginxinc/nginx-unprivileged:latest
    ContainerName=mynginx
    Network=pasta:-t,0.0.0.0%eth0/8080
-   PublishPort=0.0.0.0:8080:8080
    
    [Install]
    WantedBy=default.target
    ```
 
 If you want to publish an UDP port instead of a TCP port, replace `-t` with `-u` above.
+
+__Side note 1:__ The quadlet configuration directive `PublishPort=` is not used.
+The port is in this example published by specifying the pasta `-t` option.
 
 -------------
 
