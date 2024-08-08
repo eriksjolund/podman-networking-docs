@@ -269,6 +269,117 @@ nginx instead logs the IP address 10.89.0.2.
 
 </details>
 
+#### example: pasta + custom network + socket activation + libsdsock - source address preserved
+
+<details>
+  <summary>Click me</summary>
+
+Status: experimental. (The use of [__libsdsock__](https://github.com/ryancdotorg/libsdsock) in this example makes it experimental)
+
+Some container images do not support _socket activation_.
+For example this Containerfile defines a container image that has a web server that does not support _socket activation_.
+
+   ```
+   FROM docker.io/library/fedora
+   RUN dnf -y install python3
+   CMD ["python3","-m", "http.server", "8080", "--bind", "0.0.0.0"]
+   ```
+
+Such a container is typically configured with the `PublishPort` instruction in the container unit (for example `PublishPort=8080:8080`).
+Unfortunately, the source address of a TCP connection that the web server sees is not the IP address of the client when using pasta and a custom network.
+In other words, the _source address is not preserved_.
+
+This shortcoming can be fixed by using the library [__libsdsock__](https://github.com/ryancdotorg/libsdsock).
+If we create a socket unit and let the the web server have the library __libsdsock__ preloaded, the curl client source address is preserved.
+
+Note, this is a rather experimental approach.
+
+1. Create directory _dir_
+
+2. Create the file _dir/Containerfile_ with the contents
+   ```
+   FROM docker.io/library/fedora as myweb
+   RUN dnf -y install python3
+   CMD ["python3","-m", "http.server", "8080","--bind", "0.0.0.0"]
+   
+   FROM docker.io/library/fedora as libsdsock-builder
+   RUN dnf -y install gcc git make systemd-devel
+   RUN git clone https://github.com/ryancdotorg/libsdsock.git
+   RUN cd /libsdsock && make && make install
+
+   FROM myweb
+   RUN dnf -y install systemd-libs
+   COPY --from=libsdsock-builder /usr/local/lib/libsdsock.so /usr/local/lib/libsdsock.so
+   ```
+   Note the difference to the original Containerfile. The file _/usr/local/lib/libsdsock.so_ and the
+   RPM package _systemd-libs_ are installed.
+3. Build the container image
+   ```
+   podman build -t myweb dir/
+   ```
+4. Create directories
+   ```
+   mkdir -p ~/.config/containers/systemd
+   mkdir -p ~/.config/systemd/user
+   ```
+5. Create the file _~/.config/systemd/user/mynet.network_ with the contents
+   ```
+   [Network]
+   Internal=true
+   ```
+6. Create the file _~/.config/systemd/user/myweb.socket_ with the contents
+   ```
+   [Socket]
+   ListenStream=0.0.0.0:8080
+   
+   [Install]
+   WantedBy=sockets.target
+   ```
+7. Create the file _~/.config/containers/systemd/myweb.container_ with the contents
+   ```
+   [Unit]
+   Requires=myweb.socket
+   After=myweb.socket
+
+   [Container]
+   Image=localhost/myweb
+   Network=mynet.network
+   Environment=LD_PRELOAD=/usr/local/lib/libsdsock.so
+   Environment=LIBSDSOCK_MAP=tcp://0.0.0.0:8080=myweb.socket
+
+   [Install]
+   WantedBy=default.target
+   ```
+8. Reload the systemd user manager
+   ```
+   systemctl --user daemon-reload
+   ```
+9. Start the socket
+   ```
+   systemctl --user start myweb.socket
+   ```
+10. Fetch a web page with curl
+    ```
+    curl -s http://localhost:8080 | head -2
+    ```
+    The following output is printed
+    ```
+    <!DOCTYPE HTML>
+    <html lang="en">
+    ```
+11. Run the command
+    ```
+    journalctl --user -xequ myweb.service | tail -1
+    ```
+    The following output is printed
+    ```
+    Aug 04 15:57:26 mycomputer systemd-myweb[12829]: 127.0.0.1 - - [04/Aug/2024 15:57:26] "GET / HTTP/1.1" 200 -
+    ```
+
+__result:__ The client source address is preserved.
+
+</details>
+
 #### example: slirp4netns + port_handler=slirp4netns - source address preserved
 
 <details>
@@ -613,6 +724,26 @@ or a service unit
 * _~/.config/systemd/user/example.service_
 
 See [Socket activation](https://github.com/containers/podman/blob/main/docs/tutorials/socket_activation.md#example-socket-activated-echo-server-container-in-a-systemd-service)
+
+### Add socket activation support by preloading libsdsock with LD_PRELOAD
+
+Status: experimental
+
+Is it possible to use _socket activation_ when the executable in the container does not support _socket activation_?
+
+Yes, sometimes.
+If the executable in the container is dynamically linked, it might be possible to preload the library [__libsdsock__](https://github.com/ryancdotorg/libsdsock)
+to add support for _socket activation_.
+
+The container unit needs to set the environment variables `LD_PRELOAD` and `LIBSDSOCK_MAP`
+
+```
+Environment=LD_PRELOAD=/usr/local/lib/libsdsock.so
+Environment=LIBSDSOCK_MAP=tcp://0.0.0.0:8080=myweb.socket
+```
+The container needs to have the systemd libraries (RPM package: systemd-libs) and the file /usr/local/lib/libsdsock.so installed.
+
+See [example: pasta + custom network + socket activation + libsdsock - source address preserved](#example-pasta--custom-network--socket-activation--libsdsock---source-address-preserved)
 
 ## Socket activation (systemd system service with `User=`)
 
