@@ -1269,6 +1269,27 @@ Use `--network=pasta:-t,auto`
 
 __Side note__: Pasta does not publish TCP ports below [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start).
 
+### Pasta documentation links
+
+GitHub comments:
+
+* [GitHub comment](https://github.com/containers/podman/discussions/22943#discussioncomment-9795883) with a diagram of how pasta sets up custom networks.
+  The diagram shows an example similar to this
+  ```
+  podman network create mynet1
+  podman network create mynet2
+  podman run --network mynet1 --name container1 ...
+  podman run --network mynet1 --network mynet2 --name container2 ...
+  podman run --network mynet2 --name container4 ...
+  ```
+* [GitHub comment](https://github.com/containers/podman/issues/19213#issuecomment-1979948655) Comparing the design of pasta and slirp4netns regarding the use of NAT
+
+Talks:
+
+* March 2023 [_passt & pasta: Modern unprivileged networking for containers and VMs_](https://www.youtube.com/watch?v=QMUEtEt1i3I) from conference _Everything Open_ Melbourne, Australia.
+* June 2023 [_Root is less: container networks get in shape with pasta - DevConf.CZ_](https://devconfcz2023.sched.com/event/1MYld/root-is-less-container-networks-get-in-shape-with-pasta) video: [youtube](https://www.youtube.com/watch?v=tlxDmUPc4WY), slides: [pdf](https://static.sched.com/hosted_files/devconfcz2023/b5/pasta_devconf.pdf)
+* June 2024 [_Podman networking deep dive - DevConf.CZ_](https://pretalx.com/devconf-cz-2024/talk/BVM77L/) video: [youtube](https://youtu.be/MCY6APZ4x3A?si=Pp64Vcpa8l3qmfm-&t=1180), slides: [pdf](https://pretalx.com/media/devconf-cz-2024/submissions/BVM77L/resources/Devconf.cz_podman_networking_rQ3aMf1.pdf)
+
 ## Slirp4netns
 
 Slirp4netns is similar to Pasta but is slower and has less functionality.
