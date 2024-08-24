@@ -712,6 +712,259 @@ podman run --rm \
 
 For more information about how to use pasta to connect to a service running on the host, see [GitHub comment](https://github.com/containers/podman/issues/22653#issuecomment-2108922749).
 
+## Outbound TCP/UDP connections to the host's main network interface (e.g eth0)
+
+An example of an outbound TCP/UDP connection to the host's main network interface
+is when a container downloads a file from a web server that
+listens on the host's main network interface.
+
+| method | outbound TCP/UDP connection to the host's main network interface | comment |
+|-|-|-|
+| pasta | :heavy_check_mark: | Use the pasta option __--map-guest-addr__ |
+| slirp4netns | :heavy_check_mark: | |
+| host | :heavy_check_mark: | |
+
+To try this out, first start a web server that listens on the IP address of the host's main network interface.
+
+<details>
+  <summary>Start a web server: Click me</summary>
+
+Check the IP address of the host
+
+1. To show the IP address of the host's main network interface, run the command
+   ```
+   hostname -I
+   ```
+   The following output is printed
+   ```
+   192.168.10.108 192.168.122.1 192.168.39.1 fd25:c7f8:948a:0:912d:3900:d5c4:45ad
+   ```
+   __result:__  The IP address of the host's main network interface is 192.168.10.108. (The first listed IP address)
+
+Start the web server
+
+__Alternative 1__
+
+Requirement: Python3 installed on the host
+
+1. `sudo useradd user1`
+3. `sudo machinectl shell --uid=user1`
+4. `mkdir ~/emptydir`
+5. `cd ~/emptydir`
+6. Run the command
+   ```
+   python3 -m http.server 8080 --bind 192.168.10.108
+   ```
+   Note, the previously detected IP address of the host's main network interface was given as value to the __--bind__ option.
+
+__Alternative 2__
+
+Run a socket-activated nginx container with rootless podman.
+
+Requirement: Podman installed on the host
+
+1. `sudo useradd user1`
+2. `sudo machinectl shell --uid=user1`
+3. `mkdir -p ~/.config/systemd/user`
+4. `mkdir -p ~/.config/containers/systemd`
+5. Create the file _~/.config/systemd/user/example.socket_ containing
+   ```
+   [Unit]
+   Description=Example
+   
+   [Socket]
+   ListenStream=192.168.10.108:8080
+   
+   [Install]
+   WantedBy=sockets.target
+   ```
+   Note, `192.168.10.108` is the previously detected IP address of the host's main network interface.
+   It is used in the value for the directive `ListenStream`.
+6. Create the file _~/.config/containers/systemd/example1.container_ containing
+   ```
+   [Unit]
+   Requires=example1.socket
+   After=example1.socket
+   
+   [Container]
+   Image=ghcr.io/nginxinc/nginx-unprivileged
+   Environment=NGINX=3;
+   Network=none
+   Volume=%h/nginx_conf_d:/etc/nginx/conf.d:Z
+   [Install]
+   WantedBy=default.target
+   ```
+7. Create a directory that will be bind-mounted to _/etc/nginx/conf.d_ in the container
+   ```
+   $ mkdir $HOME/nginx_conf_d
+   ```
+8. Create the file _$HOME/nginx_conf_d/default.conf_ with the contents
+   ```
+   server {
+       listen 192.168.10.108:8080;
+       server_name example.com;
+       location / {
+	   root   /usr/share/nginx/html;
+	   index  index.html index.htm;
+       }
+       error_page   500 502 503 504  /50x.html;
+       location = /50x.html {
+	   root   /usr/share/nginx/html;
+       }
+   }
+   ```
+   The file contents were created with the command
+   ```
+   podman run --rm ghcr.io/nginxinc/nginx-unprivileged /bin/bash -c 'cat /etc/nginx/conf.d/default.conf | grep -v \# | sed "s/listen\s\+8080;/listen 192.168.10.108:8080;/g" | sed "s/  localhost/ example.com/g" | sed /^[[:space:]]*$/d' > default.conf
+   ```
+   Note, `192.168.10.108` is the previously detected IP address of the host's main network interface.
+   The IP address is used in the value for the nginx configuration directive `listen`.
+9. Reload the systemd user manager
+   ```
+   systemctl --user daemon-reload
+   ```
+10. Enable linger for the current user (_user1_)
+    ```
+    loginctl enable-linger
+    ```
+11. Pull the container image
+    ```
+    podman pull docker.io/library/nginx
+    ```
+12. Start the socket
+    ```
+    systemctl --user start nginx.socket
+    ```
+11. `exit`
+
+</details>
+
+#### example: connect to host's main network interface using slirp4netns
+
+This example shows that `--network slirp4netns` allows a container to connect to a port on the host's main network interface.
+
+<details>
+  <summary>Click me</summary>
+
+Run curl to access the web server
+
+1. `sudo useradd user2`
+2. `sudo machinectl shell --uid=user2`
+3. `podman pull docker.io/library/fedora`
+4. Run the command
+   ```
+   podman run --rm --network slirp4netns docker.io/library/fedora curl -s -4 192.168.10.108:8080 | head -4
+   ```
+   The following output is printed
+   ```
+   <!DOCTYPE html>
+   <html>
+   <head>
+   <title>Welcome to nginx!</title>
+   ```
+   Note, `192.168.10.108` is the previously detected IP address of the host's main network interface.
+5. `exit`
+6. `sudo machinectl shell --uid=user1`
+7. Check the nginx logs
+   ```
+   journalctl --user -q -xeu nginx.service | tail -1
+   ```
+   The following output is printed
+   ```
+   Aug 19 18:22:00 fcos systemd-nginx[16328]: 192.168.10.108 - - [19/Aug/2024:18:22:00 +0000] "GET / HTTP/1.1" 200 615 "-" "curl/8.6.0" "-"
+   ```
+  _192.168.10.108_ is the IP address of the host's main network interface.
+
+</details>
+
+#### example: connect to host's main network interface using pasta
+
+This example shows that `--network=pasta:--map-guest-addr=11.11.11.11` allows a container to connect
+to a port on the host's main network interface by connecting to _11.11.11.11_.
+The IP address _11.11.11.11_ was chosen arbitrarily.
+
+<details>
+  <summary>Click me</summary>
+
+Requirement: passt-0^20240821.g1d6142f or newer. That version was released 21 August 2024.
+
+Follow the same steps as in the previous example, but replace step 4 in the section _Run curl to access the web server_ with
+
+4. Run the command
+   ```
+   podman run --rm --network=pasta:--map-guest-addr=11.11.11.11 docker.io/library/fedora curl -s -4 11.11.11.11:8080 | head -4
+   ```
+   The following output is printed
+   ```
+   <!DOCTYPE html>
+   <html>
+   <head>
+   <title>Welcome to nginx!</title>
+   ```
+   The IP address _11.11.11.11_ was chosen arbitrarily in this example.
+
+</details>
+
+#### example: connect to host's main network interface using pasta and custom network
+
+This example shows that setting
+```
+pasta_options = ["--map-guest-addr","11.11.11.11"]
+```
+in the file _containers.conf_ allows containers
+in a custom network to connect to the host's main network interface by
+connecting to _11.11.11.11_. The IP address _11.11.11.11_ was chosen arbitrarily.
+
+<details>
+  <summary>Click me</summary>
+
+Requirement: passt-0^20240821.g1d6142f or newer. That version was released 21 August 2024.
+
+1. Create directory
+   ```
+   mkdir -p ~/.config/containers
+   ```
+2. If the file _~/.config/containers/containers.conf_ does not exist, create the file with the command
+   ```
+   cp /usr/share/containers/containers.conf ~/.config/containers/
+   ```
+3. Check the current `pasta_options` setting
+   ```
+   grep pasta_options ~/.config/containers/containers.conf
+   ```
+   The following output is printed
+   ```
+   #pasta_options = []
+   ```
+4. Edit the file _~/.config/containers/containers.conf_ and
+   replace the line
+   ```
+   #pasta_options = []
+   ```
+   with
+   ```
+   pasta_options = ["--map-guest-addr","11.11.11.11"]
+   ```
+   The IP address _11.11.11.11_ was chosen arbitrarily. Remember the IP address because it can
+   be used to for connecting to ports listening on the host's main network interface.
+5. Create a custom network
+   ```
+   podman network create mynet
+   ```
+6. Run `curl` to download a web page from a web server listening on the host's main network interface
+   ```
+   podman run --rm --network=mynet docker.io/library/fedora curl -s -4 11.11.11.11:8080 | head -4
+   ```
+   The following output is printed
+   ```
+   <!DOCTYPE html>
+   <html>
+   <head>
+   <title>Welcome to nginx!</title>
+   ```
+
+</details>
+
 ## Connecting to Unix socket on the host
 
 | method | description |
