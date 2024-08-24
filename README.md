@@ -1138,7 +1138,7 @@ a container's port, or a range of ports, to the host.
 This example shows that if __podman run__ is given `-p 8080:80`, then podman starts _pasta_ with the argument  `-t 8080-8080:80-80` (which is equivalent to `-t 8080:80`)
 
 <details>
-  <summary>Full example: Click me</summary>
+  <summary>Click me</summary>
 
 1. Run an nginx container and publish container port 80 to host port 8080
    ```
@@ -1180,7 +1180,7 @@ This example shows that if __podman run__ is given `-p 8080:80`, then podman sta
 Although ports are usually published by providing the __podman run__ option  [`-p`](https://docs.podman.io/en/latest/markdown/podman-run.1.html#publish-p-ip-hostport-containerport-protocol) (`--publish`) , this example shows that passing `--network pasta:-t,8080:80` is roughly equivalent to passing `-p 8080:80`
 
 <details>
-  <summary>Full example: Click me</summary>
+  <summary>Click me</summary>
 
 1. Run an nginx container and publish container port 80 to host port 8080
    ```
@@ -1223,7 +1223,7 @@ Let pasta check once a second for new listening sockets (TCP or UDP) in the cont
 Use `--network=pasta:-t,auto`
 
 <details>
-  <summary>Full example: Click me</summary>
+  <summary>Click me</summary>
 
 1. Create directory _dir_
 
