@@ -1170,3 +1170,100 @@ Show the destination address of IP packets.
    ```
    The IP address 185.199.110.153 is also
    seen in the __tshark__ output in step 1.
+
+# Troubleshooting
+
+### systemd user service generated from quadlet fails after reboot. Error message `External interface not usable`
+
+__Symptom__
+
+Pasta is used. A systemd user service _example.service_ is generated from the podman container unit file _example.container_. Such a file is also called a quadlet file. After a reboot
+the _example.service_ fails to start. The journal log contains an error message
+
+```
+Error: pasta failed with exit code 1:
+External interface not usable
+```
+
+__Solution__
+
+The container needs to start after the systemd system target _network-online.target_ has become active.
+
+systemd does not support defining dependencies between _systemd system targets_ and _systemd user services_.
+
+There is a GitHub feature request for adding the functionality:
+
+* https://github.com/systemd/systemd/issues/3312
+
+As a workaround create a _systemd user service_ that runs `systemctl is-active --wait network-online.target`
+
+1. Create the file _~/.config/systemd/user/wait-for-network.service_ containing
+   ```
+   [Unit]
+   Description=Wait for network-online.target
+   
+   [Service]
+   Type=oneshot
+   ExecStart=/usr/bin/systemctl is-active --wait network-online.target
+   
+   [Install]
+   WantedBy=default.target
+   ```
+2. Add the following lines to the existing file _~/.config/containers/systemd/example.container_ under the `[Unit]` section
+   ```
+   Requires=wait-for-network.service
+   After=wait-for-network.service
+   ```
+3. Reload the systemd user manager
+   ```
+   systemctl --user daemon-reload
+   ```
+
+The service will be in the _activating_ state until the systemd system service _network-online.target_ is active.
+
+To show the current state of the systemd user service _wait-for-network.service_, run the command
+
+```
+systemctl --user show -P ActiveState wait-for-network.service
+```
+
+To show the current state of the systemd system target _network-online.target_, run the command
+
+```
+systemctl show -P ActiveState network-online.target
+```
+
+The output should usually be one of
+
+* `active`
+* `activating`
+
+### Laptop intermittent network connectivity issues. Error message `External interface not usable`
+
+__Symptom__
+
+podman / pasta is currently not prepared for the situation when running containers while traveling with a laptop.
+A wireless network might not always be available while traveling. The network might come and go which
+causes problems like the error message `External interface not usable`
+
+```
+$ podman run --rm alpine echo hello world
+Error: pasta failed with exit code 1:
+External interface not usable
+```
+See also [GitHub dicsussion thread](https://github.com/containers/podman/discussions/22737)
+
+__Solution 1__
+
+If network access is not needed, add `--network none`
+
+```
+$ podman run --rm --network none alpine echo hello world
+hello world
+```
+
+__Solution 2__
+
+If network access is needed, add `--network slirp4netns`
+
+__Side note__: Using `--network host` should also work but it is not recommended due to security reasons.
