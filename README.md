@@ -653,43 +653,62 @@ An example of an outbound TCP/UDP connection to the host's localhost
 is when a container downloads a file from a web server on the host that
 listens on 127.0.0.1:80.
 
-| method | outbound TCP/UDP connection to the host's localhost allowed by default |
-|-|-|
-| pasta | |
-| slirp4netns | |
-| host | :heavy_check_mark: |
+| method | outbound TCP/UDP connection to the host's localhost | comment |
+|-|-|-|
+| pasta |:heavy_check_mark: | enable with one of the pasta options `--map-gw`, `--map-host-loopback` or `--tcp-ns` (`-T`) |
+| slirp4netns |:heavy_check_mark: | enable with the slirp4netns option `allow_host_loopback=true` |
+| host | :heavy_check_mark: | |
 
 Connecting to the host's localhost is not enabled by default for _pasta_ and _slirp4netns_ due to security reasons.
 See network mode [`host`](#host) as to why access to the host's localhost is considered insecure.
 
-To allow curl in a container to connect to a web server on the host that listens on 127.0.0.1:80,
+Scenario: allow curl in a container to connect to a web server on the host that listens on 127.0.0.1:8080
 
-for pasta add the option `--map-gw`
+#### example: connect to host's localhost using slirp4netns
 
-```
-podman run --rm \
-           --network=pasta:--map-gw \
-           registry.fedoraproject.org/fedora curl 10.0.2.2:80
-```
-
-and for slirp4netns add the option `slirp4netns:allow_host_loopback=true`
+Add the slirp4netns option `allow_host_loopback=true`
 
 ```
 podman run --rm \
            --network=slirp4netns:allow_host_loopback=true \
-           registry.fedoraproject.org/fedora curl 10.0.2.2:80
+           registry.fedoraproject.org/fedora curl 10.0.2.2:8080
 ```
+
+The IP address `10.0.2.2` is a special address used by slirp4netns.
+
+#### example: connect to host's localhost using the pasta option `--map-gw`
+
+Add the pasta option `--map-gw` and connect to `10.0.2.2:8080`
+
+```
+podman run --rm \
+           --network=pasta:--map-gw \
+           registry.fedoraproject.org/fedora curl 10.0.2.2:8080
+```
+
+The IP address `10.0.2.2` is a special address used by pasta.
+
+#### example: connect to host's localhost using the pasta option `--map-host-loopback`
+
+Add the pasta option `--map-host-loopback=11.11.11.11` and connect to _11.11.11.11:8080_.
+The IP address _11.11.11.11_ was chosen arbitrarily.
+
+```
+podman run -ti --rm --network=pasta:--map-host-loopback=11.11.11.11 docker.io/library/fedora curl -s -4 11.11.11.11:8080
+```
+
+#### example: connect to host's localhost using the pasta option `--tcp-ns` (`-T`)
 
 For better performance and security, pasta offers an alternative to using `--map-gw`.
 The option `-T` (`--tcp-ns`) configures TCP port forwarding from the container network namespace to the init network namespace.
 
 ```
 podman run --rm \
-           --network=pasta:-T,81:80 \
-           registry.fedoraproject.org/fedora curl 127.0.0.1:81
+           --network=pasta:-T,8081:8080 \
+           registry.fedoraproject.org/fedora curl 127.0.0.1:8081
 ```
 
-(Instead of the port number 81, it would also have been possible to specify the port number 80)
+(Instead of the port number 8081, it would also have been possible to specify the port number 8080)
 
 For more information about how to use pasta to connect to a service running on the host, see [GitHub comment](https://github.com/containers/podman/issues/22653#issuecomment-2108922749).
 
