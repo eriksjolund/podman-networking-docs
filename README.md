@@ -1498,6 +1498,7 @@ As a workaround create a _systemd user service_ that runs `systemctl is-active -
    [Service]
    Type=oneshot
    ExecStart=/usr/bin/systemctl is-active --wait network-online.target
+   RemainAfterExit=yes
    
    [Install]
    WantedBy=default.target
@@ -1510,6 +1511,10 @@ As a workaround create a _systemd user service_ that runs `systemctl is-active -
 3. Reload the systemd user manager
    ```
    systemctl --user daemon-reload
+   ```
+4. Enable _wait-for-network.service_
+   ```
+   systemctl --user enable wait-for-network.service
    ```
 
 The service will be in the _activating_ state until the systemd system service _network-online.target_ is active.
