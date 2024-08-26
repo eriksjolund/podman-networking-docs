@@ -1549,7 +1549,7 @@ $ podman run --rm alpine echo hello world
 Error: pasta failed with exit code 1:
 External interface not usable
 ```
-See also [GitHub dicsussion thread](https://github.com/containers/podman/discussions/22737)
+See also [GitHub discussion thread](https://github.com/containers/podman/discussions/22737)
 
 __Solution 1__
 
