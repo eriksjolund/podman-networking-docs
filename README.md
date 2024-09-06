@@ -1273,6 +1273,8 @@ __Side note__: Pasta does not publish TCP ports below [ip_unprivileged_port_star
 
 GitHub comments:
 
+* [GitHub issue](https://github.com/containers/podman/issues/23883) mentions that the performance of pasta can improve by adding the option `-o mtu=65520`  to the __podman network create__ command.
+
 * [GitHub comment](https://github.com/containers/podman/discussions/22943#discussioncomment-9795883) with a diagram of how pasta sets up custom networks.
   The diagram shows an example similar to this
   ```
