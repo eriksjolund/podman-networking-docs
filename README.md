@@ -767,7 +767,7 @@ Requirement: Podman installed on the host
 2. `sudo machinectl shell --uid=user1`
 3. `mkdir -p ~/.config/systemd/user`
 4. `mkdir -p ~/.config/containers/systemd`
-5. Create the file _~/.config/systemd/user/example.socket_ containing
+5. Create the file _~/.config/systemd/user/nginx.socket_ containing
    ```
    [Unit]
    Description=Example
@@ -780,11 +780,11 @@ Requirement: Podman installed on the host
    ```
    Note, `192.168.10.108` is the previously detected IP address of the host's main network interface.
    It is used in the value for the directive `ListenStream`.
-6. Create the file _~/.config/containers/systemd/example1.container_ containing
+6. Create the file _~/.config/containers/systemd/nginx.container_ containing
    ```
    [Unit]
-   Requires=example1.socket
-   After=example1.socket
+   Requires=nginx.socket
+   After=nginx.socket
    
    [Container]
    Image=ghcr.io/nginxinc/nginx-unprivileged
@@ -829,7 +829,7 @@ Requirement: Podman installed on the host
     ```
 11. Pull the container image
     ```
-    podman pull docker.io/library/nginx
+    podman pull ghcr.io/nginxinc/nginx-unprivileged
     ```
 12. Start the socket
     ```
