@@ -720,14 +720,14 @@ listens on the host's main network interface.
 
 | method | outbound TCP/UDP connection to the host's main network interface | comment |
 |-|-|-|
-| pasta | :heavy_check_mark: | Use the pasta option __--map-guest-addr__ |
+| pasta | :heavy_check_mark: | Connect to _host.containers.internal_ or _host.docker.internal_ or a hostname set with `--add-host=example.com:host-gateway`. Requires podman 5.3.0 (yet to be released). For earlier Podman versions, try to set pasta option `--map-guest-addr` (see [Documentation relevant to older Podman versions](#documentation-relevant-to-older-podman-versions)) |
 | slirp4netns | :heavy_check_mark: | |
 | host | :heavy_check_mark: | |
 
 To try this out, first start a web server that listens on the IP address of the host's main network interface.
 
 <details>
-  <summary>Start a web server: Click me</summary>
+  <summary>Start a web server that listens on host's main network interface: Click me</summary>
 
 Check the IP address of the host
 
@@ -879,89 +879,49 @@ Run curl to access the web server
 
 #### example: connect to host's main network interface using pasta
 
-This example shows that `--network=pasta:--map-guest-addr=11.11.11.11` allows a container to connect
-to a port on the host's main network interface by connecting to _11.11.11.11_.
-The IP address _11.11.11.11_ was chosen arbitrarily.
+This example shows that pasta allows a container to connect to a port on the host's main network interface
+by connecting to _host.containers.internal_, _host.docker.internal_ or to a custom hostname that is set with `--add-host=example.com:host-gateway`.
+The example requires Podman 5.3.0 (yet to be released) or later.
 
 <details>
   <summary>Click me</summary>
 
-Requirement: passt-0^20240821.g1d6142f or newer. That version was released 21 August 2024.
+To connect to  _example.com_, add `--add-host=example.com:host-gateway`
 
-Follow the same steps as in the previous example, but replace step 4 in the section _Run curl to access the web server_ with
-
-4. Run the command
-   ```
-   podman run --rm --network=pasta:--map-guest-addr=11.11.11.11 docker.io/library/fedora curl -s -4 11.11.11.11:8080 | head -4
-   ```
-   The following output is printed
-   ```
-   <!DOCTYPE html>
-   <html>
-   <head>
-   <title>Welcome to nginx!</title>
-   ```
-   The IP address _11.11.11.11_ was chosen arbitrarily in this example.
-
-</details>
-
-#### example: connect to host's main network interface using pasta and custom network
-
-This example shows that setting
 ```
-pasta_options = ["--map-guest-addr","11.11.11.11"]
+$ podman run --rm --add-host=example.com:host-gateway fedora curl -4 -s example.com:8080 | head -4
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
 ```
-in the file _containers.conf_ allows containers
-in a custom network to connect to the host's main network interface by
-connecting to _11.11.11.11_. The IP address _11.11.11.11_ was chosen arbitrarily.
 
-<details>
-  <summary>Click me</summary>
+The web page was downloaded from an nginx server that listens on the host's main network interface.
 
-Requirement: passt-0^20240821.g1d6142f or newer. That version was released 21 August 2024.
+Using a custom network works too.
 
-1. Create directory
-   ```
-   mkdir -p ~/.config/containers
-   ```
-2. If the file _~/.config/containers/containers.conf_ does not exist, create the file with the command
-   ```
-   cp /usr/share/containers/containers.conf ~/.config/containers/
-   ```
-3. Check the current `pasta_options` setting
-   ```
-   grep pasta_options ~/.config/containers/containers.conf
-   ```
-   The following output is printed
-   ```
-   #pasta_options = []
-   ```
-4. Edit the file _~/.config/containers/containers.conf_ and
-   replace the line
-   ```
-   #pasta_options = []
-   ```
-   with
-   ```
-   pasta_options = ["--map-guest-addr","11.11.11.11"]
-   ```
-   The IP address _11.11.11.11_ was chosen arbitrarily. Remember the IP address because it can
-   be used to for connecting to ports listening on the host's main network interface.
-5. Create a custom network
-   ```
-   podman network create mynet
-   ```
-6. Run `curl` to download a web page from a web server listening on the host's main network interface
-   ```
-   podman run --rm --network=mynet docker.io/library/fedora curl -s -4 11.11.11.11:8080 | head -4
-   ```
-   The following output is printed
-   ```
-   <!DOCTYPE html>
-   <html>
-   <head>
-   <title>Welcome to nginx!</title>
-   ```
+```
+$ podman network create mynet
+$ podman run --rm --network mynet --add-host=example.com:host-gateway fedora curl -4 -s example.com:8080 | head -4
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+```
+
+Instead of setting a hostname with `--add-host=example.com:host-gateway` you could also connect to
+_host.containers.internal_ or _host.docker.internal_. Podman adds those hostnames by default.
+
+```
+$ podman run --rm fedora cat /etc/hosts | grep host.containers.internal
+169.254.1.2	host.containers.internal host.docker.internal
+```
+
+```
+$ podman run --rm `--add-host=example.com:host-gateway` fedora cat /etc/hosts | grep -E 'example.com|host.containers.internal'
+169.254.1.2	example.com
+169.254.1.2	host.containers.internal host.docker.internal
+```
 
 </details>
 
@@ -1567,3 +1527,108 @@ __Solution 2__
 If network access is needed, add `--network slirp4netns`
 
 __Side note__: Using `--network host` should also work but it is not recommended due to security reasons.
+
+# Documentation relevant to older Podman versions
+
+Documentation relevant to Podman 5.2.2 and earlier versions
+
+<details>
+  <summary>Click me</summary>
+
+### About the pasta option __--map-guest-addr__
+
+Podman 5.3.0 (yet to be released) or later sets the pasta option __--map-guest-addr__ by default.
+
+If you are runnning an earlier Podman version, you could try to enable it yourself.
+
+Requirement: passt-0^20240821.g1d6142f or newer. That version was released 21 August 2024.
+
+In the example Podman 5.2.1 is used. Earlier Podman versions might work too.
+
+The example shows that `--network=pasta:--map-guest-addr=11.11.11.11` allows a container to connect
+to a port on the host's main network interface by connecting to _11.11.11.11_.
+The IP address _11.11.11.11_ was chosen arbitrarily.
+
+```
+podman run --rm --network=pasta:--map-guest-addr=11.11.11.11 docker.io/library/fedora curl -s -4 11.11.11.11:8080 | head -4
+```
+The following output is printed
+```
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+```
+
+The web page was downloaded from an nginx server that is listening on TCP port 8080 on the host's main network interface.
+The IP address _11.11.11.11_ was chosen arbitrarily in the example.
+
+If you want to use a specific hostname such as _example.com_, run the command
+```
+podman run --rm --network=pasta:--map-guest-addr=11.11.11.11 --add-host example.com:11.11.11.11 docker.io/library/fedora curl -s -4 example.com:8080 | head -4
+```
+The following output is printed
+```
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+```
+
+#### example: connect to host's main network interface using pasta and custom network
+
+This example shows that setting
+```
+pasta_options = ["--map-guest-addr","11.11.11.11"]
+```
+in the file _containers.conf_ allows containers
+in a custom network to connect to the host's main network interface by
+connecting to _11.11.11.11_. The IP address _11.11.11.11_ was chosen arbitrarily.
+
+Requirement: passt-0^20240821.g1d6142f or newer. That version was released 21 August 2024.
+In the example Podman 5.2.1 is used. Earlier Podman versions might work too.
+
+1. Create directory
+   ```
+   mkdir -p ~/.config/containers
+   ```
+2. If the file _~/.config/containers/containers.conf_ does not exist, create the file with the command
+   ```
+   cp /usr/share/containers/containers.conf ~/.config/containers/
+   ```
+3. Check the current `pasta_options` setting
+   ```
+   grep pasta_options ~/.config/containers/containers.conf
+   ```
+   The following output is printed
+   ```
+   #pasta_options = []
+   ```
+4. Edit the file _~/.config/containers/containers.conf_ and
+   replace the line
+   ```
+   #pasta_options = []
+   ```
+   with
+   ```
+   pasta_options = ["--map-guest-addr","11.11.11.11"]
+   ```
+   The IP address _11.11.11.11_ was chosen arbitrarily. Remember the IP address because it can
+   be used to for connecting to ports listening on the host's main network interface.
+5. Create a custom network
+   ```
+   podman network create mynet
+   ```
+6. Run `curl` to download a web page from a web server listening on the host's main network interface
+   ```
+   podman run --rm --network=mynet docker.io/library/fedora curl -s -4 11.11.11.11:8080 | head -4
+   ```
+   The following output is printed
+   ```
+   <!DOCTYPE html>
+   <html>
+   <head>
+   <title>Welcome to nginx!</title>
+   ```
+
+</details>
