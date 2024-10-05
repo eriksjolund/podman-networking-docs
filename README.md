@@ -243,7 +243,7 @@ In other words, replace step 4 with
    [Container]
    Image=ghcr.io/nginxinc/nginx-unprivileged:latest
    ContainerName=mynginx
-   Network=mynet.unit
+   Network=mynet.network
    PublishPort=0.0.0.0:8080:8080
    
    [Install]
@@ -910,7 +910,8 @@ $ podman run --rm --network mynet --add-host=example.com:host-gateway fedora cur
 ```
 
 Instead of setting a hostname with `--add-host=example.com:host-gateway` you could also connect to
-_host.containers.internal_ or _host.docker.internal_. Podman adds those hostnames by default.
+_host.containers.internal_ or _host.docker.internal_. Podman adds those hostnames by default to
+_/etc/hosts_ in the container.
 
 ```
 $ podman run --rm fedora cat /etc/hosts | grep host.containers.internal
@@ -918,7 +919,7 @@ $ podman run --rm fedora cat /etc/hosts | grep host.containers.internal
 ```
 
 ```
-$ podman run --rm `--add-host=example.com:host-gateway` fedora cat /etc/hosts | grep -E 'example.com|host.containers.internal'
+$ podman run --rm --add-host=example.com:host-gateway fedora cat /etc/hosts | grep -E 'example.com|host.containers.internal'
 169.254.1.2	example.com
 169.254.1.2	host.containers.internal host.docker.internal
 ```
