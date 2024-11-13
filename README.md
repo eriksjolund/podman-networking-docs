@@ -720,7 +720,7 @@ listens on the host's main network interface.
 
 | method | outbound TCP/UDP connection to the host's main network interface | comment |
 |-|-|-|
-| pasta | :heavy_check_mark: | Connect to _host.containers.internal_ or _host.docker.internal_ or a hostname set with `--add-host=example.com:host-gateway`. Requires podman 5.3.0 (yet to be released). For earlier Podman versions, try to set pasta option `--map-guest-addr` (see [Documentation relevant to older Podman versions](#documentation-relevant-to-older-podman-versions)) |
+| pasta | :heavy_check_mark: | Connect to _host.containers.internal_ or _host.docker.internal_ or a hostname set with `--add-host=example.com:host-gateway`. Requires podman 5.3.0. For earlier Podman versions, try to set pasta option `--map-guest-addr` (see [Documentation relevant to older Podman versions](#documentation-relevant-to-older-podman-versions)) |
 | slirp4netns | :heavy_check_mark: | |
 | host | :heavy_check_mark: | |
 
@@ -881,7 +881,7 @@ Run curl to access the web server
 
 This example shows that pasta allows a container to connect to a port on the host's main network interface
 by connecting to _host.containers.internal_, _host.docker.internal_ or to a custom hostname that is set with `--add-host=example.com:host-gateway`.
-The example requires Podman 5.3.0 (yet to be released) or later.
+The example requires Podman 5.3.0 or later.
 
 <details>
   <summary>Click me</summary>
@@ -1550,7 +1550,7 @@ Documentation relevant to Podman 5.2.2 and earlier versions
 
 ### About the pasta option __--map-guest-addr__
 
-Podman 5.3.0 (yet to be released) or later sets the pasta option __--map-guest-addr__ by default.
+Podman 5.3.0 or later sets the pasta option __--map-guest-addr__ by default.
 
 If you are runnning an earlier Podman version, you could try to enable it yourself.
 
