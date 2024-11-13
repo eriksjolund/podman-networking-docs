@@ -1451,41 +1451,53 @@ There is a GitHub feature request for adding the functionality:
 
 * https://github.com/systemd/systemd/issues/3312
 
-As a workaround create a _systemd user service_ that runs `systemctl is-active --wait network-online.target`
+As a workaround create a _systemd user service_ that runs `sh -c 'until systemctl is-active network-online.target; do sleep 0.5; done'`
 
-1. Create the file _~/.config/systemd/user/wait-for-network.service_ containing
+Alternative 1:
+
+Use Podman 5.3.0 or later which includes the file _/usr/lib/systemd/user/podman-user-wait-network-online.service_.
+
+```
+$ grep ExecStart= /usr/lib/systemd/user/podman-user-wait-network-online.service
+ExecStart=sh -c 'until systemctl is-active network-online.target; do sleep 0.5; done'
+```
+
+Dependencies for that service is added by default by the quadlet generator (`/usr/lib/systemd/user-generators/podman-user-generator`)
+when it generates systemd user services from user container units.
+
+Alternative 2:
+
+For older Podman versions follow these steps:
+
+1. Create directory
    ```
-   [Unit]
-   Description=Wait for network-online.target
-   
-   [Service]
-   Type=oneshot
-   ExecStart=/usr/bin/systemctl is-active --wait network-online.target
-   RemainAfterExit=yes
-   
-   [Install]
-   WantedBy=default.target
+   mkdir -p ~/.config/systemd/user/
+   ```
+1. Create the file _~/.config/systemd/user/podman-user-wait-network-online.service_
+   ```
+   curl -o ~/.config/systemd/user/podman-user-wait-network-online.service \
+     -Ls https://raw.githubusercontent.com/containers/podman/refs/heads/main/contrib/systemd/user/podman-user-wait-network-online.service
    ```
 2. Add the following lines to the existing file _~/.config/containers/systemd/example.container_ under the `[Unit]` section
    ```
-   Requires=wait-for-network.service
-   After=wait-for-network.service
+   Wants=podman-user-wait-network-online.service
+   After=podman-user-wait-network-online.service
    ```
 3. Reload the systemd user manager
    ```
    systemctl --user daemon-reload
    ```
-4. Enable _wait-for-network.service_
+4. Enable _podman-user-wait-network-online.service_
    ```
-   systemctl --user enable wait-for-network.service
+   systemctl --user enable podman-user-wait-network-online.service
    ```
 
-The service will be in the _activating_ state until the systemd system service _network-online.target_ is active.
+The systemd user service _podman-user-wait-network-online.service_ will be in the _activating_ state until the systemd system service _network-online.target_ is active.
 
-To show the current state of the systemd user service _wait-for-network.service_, run the command
+To show the current state of the systemd user service _podman-user-wait-network-online.service_, run the command
 
 ```
-systemctl --user show -P ActiveState wait-for-network.service
+systemctl --user show -P ActiveState podman-user-wait-network-online.service
 ```
 
 To show the current state of the systemd system target _network-online.target_, run the command
