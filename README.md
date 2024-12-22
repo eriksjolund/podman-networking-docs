@@ -1427,6 +1427,23 @@ Show the destination address of IP packets.
    The IP address 185.199.110.153 is also
    seen in the __tshark__ output in step 1.
 
+# HTTP reverse proxy
+
+Use an HTTP reverse proxy that supports socket activation to get better support for preserved source IP address
+in incoming connections.
+
+| software | socket activation support | systemd notify support | comment |
+| --       | --                        | --                     | --      |
+| caddy    | :heavy_check_mark:        | :heavy_check_mark:     | Reloading the caddy configuration does not work (see https://github.com/caddyserver/caddy/issues/6631) |
+| nginx    | :heavy_check_mark:        |                        | Although _socket activation_ works, it is not officially supported by nginx. See feature request https://trac.nginx.org/nginx/ticket/237. |
+| traefik  | :heavy_check_mark:        | :heavy_check_mark:     | Traefik has issues during startup otherwise it works fine after a few seconds. When Traefik starts up Traefik might return HTTP response 404. Traefik sends systemd notify `READY=1` before traefik is ready. See https://github.com/traefik/traefik/issues/7347 |
+
+See examples:
+
+* https://github.com/eriksjolund/podman-caddy-socket-activation
+* https://github.com/eriksjolund/podman-nginx-socket-activation
+* https://github.com/eriksjolund/podman-traefik-socket-activation
+
 # Troubleshooting
 
 ### systemd user service generated from quadlet fails after reboot. Error message `External interface not usable`
