@@ -8,7 +8,7 @@ This guide is about how to configure networking when using __rootless Podman__.
 
 Listening TCP/UDP sockets
 
-| method | source address preserved | native perfomance | support for binding to specific network device | minimum port number |
+| method | source address preserved | native performance | support for binding to specific network device | minimum port number |
 |-|-|-|-|-|
 | [socket activation (systemd user service)](#socket-activation-systemd-user-service) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start) |
 | [socket activation (systemd system service with User=)](#socket-activation-systemd-system-service-with-user) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | 0 |
@@ -485,7 +485,7 @@ In other words, replace step 4 with
 
 ## Performance
 
-| method | native perfomance |
+| method | native performance |
 |-|-|
 | socket activation (systemd user service) | :heavy_check_mark: |
 | socket activation (systemd system service) | :heavy_check_mark: |
@@ -641,7 +641,7 @@ An example of an outbound TCP/UDP connection to the internet
 is when a container downloads a file from a
 web server on the internet.
 
-| method | native perfomance |
+| method | native performance |
 |-|-|
 | pasta | |
 | slirp4netns | |
@@ -982,7 +982,7 @@ See [example: pasta + custom network + socket activation + libsdsock - source ad
 
 Systemd system service (`User=`) and socket activation makes it possible for rootless Podman to use privileged ports.
 
-For details of how to use socket-actived nginx, see for instance
+For details of how to use socket-activated nginx, see for instance
 Example 3, Example 4, Example 5, Example 6 in the repo https://github.com/eriksjolund/podman-nginx-socket-activation
 
 :warning: How well this solution works is currently unknown. What are the pros and cons? Will it work for other software than nginx? More testing is needed.
@@ -1234,7 +1234,7 @@ __Side note__: Pasta does not publish TCP ports below [ip_unprivileged_port_star
 
 GitHub comments:
 
-* [GitHub issue](https://github.com/containers/podman/issues/23883) mentions that the performance of pasta can improve by adding the option `-o mtu=65520`  to the __podman network create__ command.
+* [GitHub issue](https://github.com/containers/podman/issues/23883) mentions that the performance of pasta can be improved by adding the option `-o mtu=65520`  to the __podman network create__ command.
 
 * [GitHub comment](https://github.com/containers/podman/discussions/22943#discussioncomment-9795883) with a diagram of how pasta sets up custom networks.
   The diagram shows an example similar to this
@@ -1293,7 +1293,7 @@ _Netavark_ is the default network backend.
 
 **Example** Create a network and run an nginx container
 
-Create the network _mynyet_
+Create the network _mynet_
 
 ```
 $ podman network create mynet
