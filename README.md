@@ -1429,34 +1429,54 @@ Show the destination address of IP packets.
 
 # HTTP reverse proxy
 
-## Proxy reachable only from the internet
+## Access proxy from internet and host
 
 <img src="graphics/proxy.excalidraw.svg" alt="ny Description of the SVG" width="100%" height="100%">
 
 The proxy container uses _socket activation_. Configure the HTTP reverse proxy to proxy traffic to
-hostnames that are defined by [`ContainerName=`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#containername).
-Alternatively, [`NetworkAlias=`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#networkalias) can be used to
-resolve containers. Both `ContainerName=` and `NetworkAlias=` values are resolved by the podman internal DNS server.
+hostnames that are defined by [`ContainerName=`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#containername)
+or [`NetworkAlias=`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#networkalias).
+Both `ContainerName=` and `NetworkAlias=` values are resolved by the podman internal DNS server (Aardvark)
+to the container's IP address on the custom network.
 
-## Proxy reachable also from the custom network by creating an extra socket
+## Access proxy from internet, host and custom network
+
+### Alternative 1: create extra socket and use `NetworkAlias=`
 
 <img src="graphics/proxy-networkalias.excalidraw.svg" alt="ny Description of the SVG" width="100%" height="100%">
 
-The proxy container uses _socket activation_. Configure the proxy to create a listening socket on the custom network.
+The proxy receives incoming connections from the Internet and the host on the socket-activated socket.
+To also support connections from containers on the custom network, the proxy creates
+a listening socket on the custom network.
 Add [`NetworkAlias=`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#networkalias)
 option to the proxy container for the domains it serves.
 
-## Proxy reachable also from the custom network by using `AddHost=`
+### Alternative 2: use `AddHost=` and `host-gateway`
 
 <img src="graphics/proxy-host-gateway.excalidraw.svg" alt="ny Description of the SVG" width="100%" height="100%">
 
-The proxy container uses _socket activation_.
+The proxy receives incoming from the Internet, the host and the custom network on the socket-activated socket.
 Add [`AddHost=`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#addhost) option
-with the special value `host-gateway` to the container that needs to connect to the proxy.
+with the special value `host-gateway` to containers on the custom network that need to connect to the proxy.
+
+For example, a container _curl_ can fetch the URL http://whoami.example.com from the proxy with this quadlet configuration:
+
+```
+ContainerName=curl
+Image=docker.io/library/fedora
+Exec=bash -c "curl http://whoami.example.com ; sleep inf"
+AddHost=whoami.example.com:host-gateway
+```
+
+The domain name _whoami.example.com_ used in the curl command is also specified
+in `AddHost=whoami.example.com:host-gateway`.
+When the curl command looks up _whoami.example.com_, the podman internal DNS server (Aardvark)
+resolves _whoami.example.com_ to an IP address that represents the host's main network interface.
+Curl creates a new TCP connection to the IP address. The result is that curl connects
+to the socket-activated socket.
+
 For details about the special value `host-gateway`,
 see [`--add-host`](https://docs.podman.io/en/latest/markdown/podman-run.1.html#add-host-hostname-hostname-ip).
-If for example```AddHost=whoami.example.com:host-gateway``` is given, then the podman internal DNS server will
-resolve _whoami.example.com_ to an IP address that represents the host's main network interface.
 
 ## HTTP preserve proxy examples
 
