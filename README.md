@@ -1433,7 +1433,7 @@ Show the destination address of IP packets.
 
 <img src="graphics/proxy.excalidraw.svg" alt="ny Description of the SVG" width="100%" height="100%">
 
-The proxy container uses _socket activation_. Configure the HTTP reverse proxy to proxy traffic to
+The HTTP reverse proxy container uses _socket activation_. Configure the proxy to proxy traffic to
 hostnames that are defined by [`ContainerName=`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#containername)
 or [`NetworkAlias=`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#networkalias).
 Both `ContainerName=` and `NetworkAlias=` values are resolved by the podman internal DNS server (Aardvark)
@@ -1445,7 +1445,7 @@ to the container's IP address on the custom network.
 
 <img src="graphics/proxy-networkalias.excalidraw.svg" alt="ny Description of the SVG" width="100%" height="100%">
 
-The proxy receives incoming connections from the Internet and the host on the socket-activated socket.
+The HTTP reverse proxy receives incoming connections from the Internet and the host on the socket-activated socket.
 To also support connections from containers on the custom network, the proxy creates
 a listening socket on the custom network.
 Add [`NetworkAlias=`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#networkalias)
@@ -1455,7 +1455,7 @@ option to the proxy container for the domains it serves.
 
 <img src="graphics/proxy-host-gateway.excalidraw.svg" alt="ny Description of the SVG" width="100%" height="100%">
 
-The proxy receives incoming from the Internet, the host and the custom network on the socket-activated socket.
+The HTTP reverse proxy receives incoming from the Internet, the host and the custom network on the socket-activated socket.
 Add [`AddHost=`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#addhost) option
 with the special value `host-gateway` to containers on the custom network that need to connect to the proxy.
 
@@ -1478,7 +1478,7 @@ to the socket-activated socket.
 For details about the special value `host-gateway`,
 see [`--add-host`](https://docs.podman.io/en/latest/markdown/podman-run.1.html#add-host-hostname-hostname-ip).
 
-## HTTP preserve proxy examples
+## HTTP reverse proxy examples
 
 Use an HTTP reverse proxy that supports socket activation to get better support for preserved source IP address
 in incoming connections.
