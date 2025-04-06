@@ -1552,6 +1552,22 @@ $ podman run --rm --network none alpine echo hello world
 hello world
 ```
 
+When running as systemd service, also add `DefaultDependencies=no` in the `[Quadlet]` section to avoid
+waiting for the network to be available when the service is started.
+
+```
+[Container]
+Image=docker.io/library/alpine
+Exec=sleep inf
+Network=none
+[Quadlet]
+DefaultDependencies=no
+```
+
+Note, that `DefaultDependencies` in the [`[Quadlet]`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#defaultdependencies) section
+is not the same as `DefaultDependencies` in the [`[Unit]`](https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html#DefaultDependencies=) section.
+Setting the value of one of them will not impact the value of the other.
+
 __Solution 2__
 
 If network access is needed, add `--network slirp4netns`
