@@ -1,3 +1,4 @@
+
 # podman-networking-docs
 
 This guide is about how to configure networking when using __rootless Podman__.
@@ -1441,6 +1442,13 @@ to the container's IP address on the custom network.
 
 ## Access proxy from internet, host and custom network
 
+To allow containers on the custom network to connect to the proxy, use one of these alternatives:
+
+| alternative | configuration | Internal=true support | Internal=false support | on-demand startup support | network performance |
+| --          | --  | --            |         --  | --  | --  |
+| alternative 1 | `NetworkAlias=whoami.example.com` |  :heavy_check_mark: | :heavy_check_mark: | | fast |
+| alternative 2 | `AddHost=whoami.example.com:host-gateway` | :heavy_check_mark: | | :heavy_check_mark: | slow |
+
 ### Alternative 1: create extra socket and use `NetworkAlias=`
 
 <img src="graphics/proxy-networkalias.excalidraw.svg" alt="ny Description of the SVG" width="100%" height="100%">
@@ -1449,7 +1457,8 @@ The HTTP reverse proxy receives incoming connections from the Internet and the h
 To also support connections from containers on the custom network, the proxy creates
 a listening socket on the custom network.
 Add [`NetworkAlias=`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#networkalias)
-option to the proxy container for the domains it serves.
+option to the proxy container for the domains it serves. Starting the proxy on-demand is not possible because
+the proxy needs to listen on port 80 on the custom network.
 
 ### Alternative 2: use `AddHost=` and `host-gateway`
 
