@@ -1444,7 +1444,7 @@ to the container's IP address on the custom network.
 
 To allow containers on the custom network to connect to the proxy, use one of these alternatives:
 
-| alternative | configuration | Internal=true support | Internal=false support | on-demand startup support | network performance |
+| alternative | configuration | Internal=false support | Internal=true support | on-demand startup support | network performance |
 | --          | --  | --            |         --  | --  | --  |
 | alternative 1 | `NetworkAlias=whoami.example.com` |  :heavy_check_mark: | :heavy_check_mark: | | fast |
 | alternative 2 | `AddHost=whoami.example.com:host-gateway` | :heavy_check_mark: | | :heavy_check_mark: | slow |
