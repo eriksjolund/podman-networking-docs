@@ -1460,6 +1460,9 @@ Add [`NetworkAlias=`](https://docs.podman.io/en/latest/markdown/podman-systemd.u
 option to the proxy container for the domains it serves. Starting the proxy on-demand is not possible because
 the proxy needs to listen on port 80 on the custom network.
 
+For a step-by-step example, see Example 4 in
+[podman-caddy-socket-activation](https://github.com/eriksjolund/podman-caddy-socket-activation).
+
 ### Alternative 2: use `AddHost=` and `host-gateway`
 
 <img src="graphics/proxy-host-gateway.excalidraw.svg" alt="ny Description of the SVG" width="100%" height="100%">
