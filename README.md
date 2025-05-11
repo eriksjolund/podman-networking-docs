@@ -1497,7 +1497,7 @@ in incoming connections.
 
 | software | socket activation support | systemd notify support | comment |
 | --       | --                        | --                     | --      |
-| caddy    | :heavy_check_mark:        | :heavy_check_mark:     | Reloading the caddy configuration does not work (see https://github.com/caddyserver/caddy/issues/6631) |
+| caddy    | :heavy_check_mark:        | :heavy_check_mark:     | |
 | nginx    | :heavy_check_mark:        |                        | Although _socket activation_ works, it is not officially supported by nginx. See feature request https://trac.nginx.org/nginx/ticket/237. |
 | traefik  | :heavy_check_mark:        | :heavy_check_mark:     | Traefik has issues during startup otherwise it works fine after a few seconds. When Traefik starts up Traefik might return HTTP response 404. Traefik sends systemd notify `READY=1` before traefik is ready. See https://github.com/traefik/traefik/issues/7347 |
 
