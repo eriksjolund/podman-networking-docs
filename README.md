@@ -1231,6 +1231,26 @@ Use `--network=pasta:-t,auto`
 
 __Side note__: Pasta does not publish TCP ports below [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start).
 
+### Number of Pasta processes
+
+For each custom network, there will be 1 pasta process.
+If no container using this network is running, then the pasta process will also not be running.
+
+For each running pod infra container, there will be 1 pasta process.
+A pod infra container can be started explicitly with `podman pod start ...` or
+it will be started when a container in the pod is started.
+Note, the pod infra container will not be automatically stopped when all containers
+in the pod has been stopped.
+
+For each container that is not in a pod or using a custom network, there will be 1 pasta process.
+
+Containers using `--network=none` and `--network=host` do not use pasta.
+
+This paragraph gives a good estimate of how many pasta processes are used but
+it's not 100% accurate. It does not take into account containers
+that use less common `--network` setttings such as
+`private`, `slirp4netns`, `ns:path` and  `container:id`.
+
 ### Pasta documentation links
 
 GitHub comments:
