@@ -1,4 +1,3 @@
-
 # podman-networking-docs
 
 This guide is about how to configure networking when using __rootless Podman__.
@@ -1230,6 +1229,161 @@ Use `--network=pasta:-t,auto`
 </details>
 
 __Side note__: Pasta does not publish TCP ports below [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start).
+
+### Updating the Pasta version
+
+#### Install a newer Pasta version from source code
+
+To try out the latest version of Pasta,
+build Pasta from the source code.
+
+<details>
+  <summary>To build pasta on the host</summary>
+
+Build and install pasta with the following commands
+
+```
+git clone git://passt.top/passt
+cd passt
+make
+mkdir -p ~/installdir/bin
+cp pasta ~/installdir/bin
+```
+
+and add the text
+
+```
+[engine]
+helper_binaries_dir=["/home/test/installdir/bin", "/usr/libexec/podman"]
+```
+
+to the file _~/.config/containers/containers.conf_
+
+</details>
+
+If your system does not have any C compiler installed, you could build pasta inside a container.
+
+<details>
+  <summary>To build pasta with a gcc container</summary>
+
+Some Linux systems such as Fedora CoreOS do not have a C compiler installed by default.
+Instead of installing a C compiler on your system, you could also build pasta in a container.
+
+Build and install with the following commands
+
+1. Create directory
+   ```
+   mkdir ~/ctr
+   ```
+3. Create file _~/ctr/Containerfile_ containing
+   ```
+   FROM docker.io/library/fedora
+   RUN dnf install -y gcc make
+   ```
+4. Build container
+   ```
+   podman build -t gcc ~/ctr
+   ```
+5. Create install directory
+   ```
+   mkdir ~/installdir
+   ```
+6. Download the Pasta source code
+   ```
+   git clone git://passt.top/passt
+   ```
+7. Build the pasta executable
+   ```
+   podman run --rm \
+       -v ./passt:/src:Z \
+       -v ~/installdir:/usr/local:Z \
+       -w /src \
+       localhost/gcc make install
+   ```
+8. Add the text
+   ```
+   [engine]
+   helper_binaries_dir=["/home/test/installdir/bin", "/usr/libexec/podman"]
+   ```
+   to the file _~/.config/containers/containers.conf_
+9. Optional step: Show the pasta executable podman uses
+   ```
+   podman info --format '{{.Host.Pasta.Executable}}'
+   ```
+   The following output is printed
+   ```
+   /home/test/installdir/bin/pasta
+   ```
+
+</details>
+
+#### Show pasta executable path
+
+Alternative 1: use a Go template
+
+```
+podman info --format '{{.Host.Pasta.Executable}}'
+```
+The following output is printed
+```
+/usr/bin/pasta
+```
+
+Alternative 2: use JSON and jq
+
+```
+podman info --format json | jq -r .host.pasta.executable
+```
+The following output is printed
+```
+/usr/bin/pasta
+```
+
+#### Configure pasta executable path
+
+The configuration setting `helper_binaries_dir` in the file _~/.config/containers/containers.conf_
+contains a list of directories that Podman searches when looking up the path to
+the pasta executable.
+
+For example
+```
+[engine]
+helper_binaries_dir=["/home/test/installdir/bin", "/usr/libexec/podman"]
+```
+
+<details>
+  <summary>To configure Podman to use $HOME/installdir/bin/pasta</summary>
+
+1. Check which pasta executable Podman uses. Run
+   ```
+   podman info --format '{{.Host.Pasta.Executable}}'
+   ```
+   The following output is printed
+   ```
+   /usr/bin/pasta
+   ```
+2. Check if _~/.config/containers/containers.conf_ exists
+   ```
+   ls ~/.config/containers/containers.conf
+   ```
+   The following output is printed
+   ```
+   ls: cannot access '/home/test/.config/containers/containers.conf': No such file or directory
+   ```
+3. Create file _~/.config/containers/containers.conf_ containing
+   ```
+   [engine]
+   helper_binaries_dir=["/home/test/installdir/bin", "/usr/libexec/podman"]
+   ```
+4. Check which pasta executable Podman uses. Run
+   ```
+   podman info --format '{{.Host.Pasta.Executable}}'
+   ```
+   The following output is printed
+   ```
+   /home/test/installdir/bin/pasta
+   ```
+</details>
 
 ### Pasta documentation links
 
