@@ -1243,16 +1243,19 @@ pasta_options = ["--log-file", "/home/test/pasta.log",
 will not work as expected if there are more than one pasta process running.
 For details, see [section _Enable debug logging from Pasta_](#enable-debug-logging-from-pasta).
 
-If there is any custom network connected to any running container, then 1 pasta process handles that.
-That pasta process handles all containers that are running in custom networks.
+If there is any running container or pod connected to a any custom network,
+then 1 pasta process handles that. That pasta process handles all containers
+and pods that are connected to custom networks.
 
-For each running pod infra container, there will be 1 pasta process.
+For each running pod infra container that is not connected to any custom network,
+there will be 1 pasta process.
 A pod infra container can be started explicitly with `podman pod start ...` or
 it will be started when a container in the pod is started.
 Note, the pod infra container will not be automatically stopped when all containers
 in the pod have been stopped.
 
-For each container that is not in a pod or using a custom network, there will be 1 pasta process.
+For each container that is not in a pod and not connected to any custom network,
+there is 1 pasta process.
 
 Containers using `--network=none` and `--network=host` do not use pasta.
 
