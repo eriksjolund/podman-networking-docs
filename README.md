@@ -1838,8 +1838,9 @@ pasta_options = ["--log-file", "/home/test/pasta.log",
 ```
 
 > [!IMPORTANT]
-> Logging and tracing is not supported when there are multiple `pasta` processes.
-> Every new `pasta` process truncates any existing file on the configured paths.
+> Configuring `--log-file` or `--pcap` in _containers.conf_ is not supported when there are
+> multiple `pasta` processes. Every new `pasta` process truncates any existing file on the
+> configured paths.
 
 <details>
   <summary>To enable debug logging from Pasta</summary>
