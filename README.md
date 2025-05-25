@@ -1240,7 +1240,7 @@ pasta_options = ["--log-file", "/home/test/pasta.log",
                  "--pcap", "/home/test/pasta.pcap",
                  "--trace"]
 ```
-will only work as expected if there is only one pasta process.
+will not work as expected if there are more than one pasta process running.
 For details, see [section _Enable debug logging from Pasta_](#enable-debug-logging-from-pasta).
 
 For each custom network, there will be 1 pasta process.
