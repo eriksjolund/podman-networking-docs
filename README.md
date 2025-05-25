@@ -1591,7 +1591,7 @@ Show the destination address of IP packets.
 The HTTP reverse proxy container uses _socket activation_. Configure the proxy to proxy traffic to
 hostnames that are defined by [`ContainerName=`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#containername)
 or [`NetworkAlias=`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#networkalias).
-Both `ContainerName=` and `NetworkAlias=` values are resolved by the podman internal DNS server (Aardvark)
+Both `ContainerName=` and `NetworkAlias=` values are resolved by the podman internal DNS server (Aardvark-dns)
 to the container's IP address on the custom network.
 
 ## Access proxy from internet, host and custom network
@@ -1636,7 +1636,7 @@ AddHost=whoami.example.com:host-gateway
 
 The domain name _whoami.example.com_ used in the curl command is also specified
 in `AddHost=whoami.example.com:host-gateway`.
-When the curl command looks up _whoami.example.com_, the podman internal DNS server (Aardvark)
+When the curl command looks up _whoami.example.com_, the podman internal DNS server (Aardvark-dns)
 resolves _whoami.example.com_ to an IP address that represents the host's main network interface.
 Curl creates a new TCP connection to the IP address. The result is that curl connects
 to the socket-activated socket.
@@ -1790,6 +1790,138 @@ __Solution 2__
 If network access is needed, add `--network slirp4netns`
 
 __Side note__: Using `--network host` should also work but it is not recommended due to security reasons.
+
+## Debugging
+
+It's possible to enable debug information from Pasta and Aardvark-dns.
+
+### Enable debug logging from Pasta
+
+Use this _containers.conf_ configuration:
+
+```
+[network]
+pasta_options = ["--log-file", "/home/test/pasta.log",
+                 "--pcap", "/home/test/pasta.pcap",
+                 "--trace"]
+```
+
+> [!IMPORTANT]
+> Logging and tracing is not supported when there are multiple `pasta` processes.
+> Every new `pasta` process truncates any existing file on the configured paths.
+
+<details>
+  <summary>To enable debug logging from Pasta</summary>
+
+1. Create directory
+   ```
+   mkdir -p ~/.config/containers
+   ```
+2. Add the following lines to _~/.config/containers/containers.conf_
+   ```
+   [network]
+   pasta_options = ["--log-file", "/home/test/pasta.log",
+                    "--pcap", "/home/test/pasta.pcap",
+                    "--trace"]
+   ```
+   (Adjust the above paths for your system)
+3. Stop all your containers and all your pasta processes. (Rebooting your computer is
+   an alternative)
+4. Start your containers again
+5. Show the pasta logs
+   ```
+   cat ~/pasta.log
+   ```
+
+</details>
+
+### Enable debug logging from Aardvark-dns
+
+Install `aardvark-dns` from source code with the command `cargo build --profile dev`
+to support debug logging. Create a wrapper script that sets the environment variable
+`RUST_LOG` to `trace`.
+
+<details>
+  <summary>To build aardvark-dns with a rust container and enable debug logging</summary>
+
+1. Change directory
+   ```
+   cd ~
+   ```
+2. Create directory
+   ```
+   mkdir ~/ctr
+   ```
+3. Create file _~/ctr/Containerfile_ containing
+   ```
+   FROM docker.io/library/fedora
+   RUN dnf install -y rust cargo
+   ```
+4. Build container image
+   ```
+   podman build -t cargo ~/ctr
+   ```
+5. Clone the git repository
+   ```
+   git clone https://github.com/containers/aardvark-dns.git
+   ```
+6. Build the `aardvark-dns` executable
+   ```
+   podman run --rm -v ./aardvark-dns:/src:Z -w /src localhost/cargo cargo build --profile dev
+   ```
+7. Create directory
+   ```
+   mkdir ~/bin
+   ```
+8. Create file _~/bin/aardvark-dns_ containing
+   ```
+   #!/bin/bash
+   export RUST_LOG=trace
+   exec ~/aardvark-dns/target/debug/aardvark-dns "$@"
+   ```
+9. Set file permissions
+   ```
+   chmod 755 ~/bin/aardvark-dns
+   ```
+
+</details>
+
+<details>
+  <summary>To view aardvark-dns debug logs with journalctl</summary>
+
+1. Create directory
+   ```
+   mkdir -p ~/.config/containers/systemd
+   ```
+2. Create file _~/.config/containers/systemd/mynet.network_ containing
+   ```
+   [Network]
+   ```
+3. Create file _~/.config/containers/systemd/whoami.container_ containing
+   ```
+   [Container]
+   Image=docker.io/traefik/whoami
+   Network=mynet.network
+   ```
+4. Reload the system manager
+   ```
+   systemctl --user daemon-reload
+   ```
+5. Show the logs from `aardvark-dns`
+   ```
+   journalctl --user -xe | grep aardvark-dns
+   ```
+   The following output is printed
+   ```
+   May 23 16:27:19 localhost.localdomain systemd[18111]: Started run-p25093-i25094.scope - [systemd-run] /home/test/bin/aardvark-dns --config /run/user/1004/containers/networks/aardvark-dns -p 53 run.
+   May 23 16:27:19 localhost.localdomain aardvark-dns[25093]: starting aardvark on a child with pid 25094
+   May 23 16:27:19 localhost.localdomain aardvark-dns[25094]: Successfully parsed config
+   May 23 16:27:19 localhost.localdomain aardvark-dns[25094]: Listen v4 ip {"systemd-mynet": [10.89.0.1]}
+   May 23 16:27:19 localhost.localdomain aardvark-dns[25094]: Listen v6 ip {}
+   May 23 16:27:19 localhost.localdomain aardvark-dns[25094]: Using the following upstream servers: [169.254.1.1:53, 10.0.2.3:53]
+   ```
+
+</details>
 
 # Documentation relevant to older Podman versions
 
