@@ -633,6 +633,228 @@ If the software supports _socket activation_, an alternative is to set up a
 systemd system service with `User=`. For details, see the
 section [_Socket activation (systemd system service with User=)_](#socket-activation-systemd-system-service-with-user)
 
+## Using the same port from multiple services
+
+Using the same port from multiple services can be useful for
+
+* zero downtime deployment (upgrading without interruption)
+* loadbalancing
+
+There are two alternatives.
+
+| alternative | number of socket() | number of socket units | comment |
+| --  |  -- |  -- | --   |
+| alternative 1 | multiple | multiple | using systemd directive [`ReusePort=true`](https://www.freedesktop.org/software/systemd/man/latest/systemd.socket.html#ReusePort=) |
+| alternative 2 | 1 | 1 | using systemd directive [`Sockets=`](https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html#Sockets=) |
+
+### Alternative 1: `Use ReusePort=true` to bind multiple sockets to the same port
+
+The systemd directive [`ReusePort=true`](https://www.freedesktop.org/software/systemd/man/latest/systemd.socket.html#ReusePort=)
+enables SO_REUSEPORT for the socket. Multiple socket units can listen on the same port if they all set `ReusePort=true`
+
+#### example: Use `ReusePort=true` to share a port between services
+
+<details>
+  <summary>Click me</summary>
+
+Run two caddy static web sites that both listen on TCP/80.
+
+1. Create the file `~/Caddyfile.app1` containing
+   ```
+   {
+	   admin off
+   }
+
+   http://localhost {
+	   bind fd/3 {
+		   protocols h1
+	   }
+	   log
+	   respond "Hello from app 1
+   "
+   }
+   ```
+2. Create the file `~/Caddyfile.app2` containing
+   ```
+   {
+	   admin off
+   }
+
+   http://localhost {
+	   bind fd/3 {
+		   protocols h1
+	   }
+	   log
+	   respond "Hello from app 2
+   "
+   }
+   ```
+3. Create the file `~/.config/systemd/user/app1.socket` containing
+   ```
+   [Socket]
+   ListenStream=80
+   ReusePort=true
+   ```
+4. Create the file `~/.config/systemd/user/app2.socket` containing
+   ```
+   [Socket]
+   ListenStream=80
+   ReusePort=true
+   ```
+5. Create the file `~/.config/containers/systemd/app1.container` containing
+   ```
+   [Container]
+   Exec=/usr/bin/caddy run --config /etc/caddy/Caddyfile
+   Image=docker.io/library/caddy
+   Notify=true
+   Volume=%h/Caddyfile.app1:/etc/caddy/Caddyfile:Z
+   ```
+6. Create the file `~/.config/containers/systemd/app2.container` containing
+   ```
+   [Container]
+   Exec=/usr/bin/caddy run --config /etc/caddy/Caddyfile
+   Image=docker.io/library/caddy
+   Notify=true
+   Volume=%h/Caddyfile.app2:/etc/caddy/Caddyfile:Z
+   ```
+7. Reload the system manager configuration
+   ```
+   systemctl --user daemon-reload
+   ```
+8. Start app1.socket
+   ```
+   systemctl --user start app1.socket
+   ```
+8. Start app2.socket
+   ```
+   systemctl --user start app2.socket
+   ```
+9. Run curl multiple times
+   ```
+   curl localhost:80
+   ```
+   The result is non-deterministic. Sometimes app1 will handle the TCP connection, sometimes app2.
+   Here is an example how it could look like
+   ```
+   $ curl localhost:80
+   Hello from app1
+   $ curl localhost:80
+   Hello from app1
+   $ curl localhost:80
+   Hello from app2
+   $ curl localhost:80
+   Hello from app1
+   ```
+
+> [!TIP]
+> This example also be written with quadlet template files and an environment variable
+> to reduce repetition of information in the files.
+> https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#template-files
+
+1. Create the file `~/Caddyfile` containing
+   ```
+   {
+	   admin off
+   }
+
+   http://localhost {
+	   bind fd/3 {
+		   protocols h1
+	   }
+	   log
+	   respond "Hello from app {env.MY_APP}
+   "
+   }
+   ```
+2. Create the file `~/.config/systemd/user/app@.socket` containing
+   ```
+   [Socket]
+   ListenStream=80
+   ReusePort=true
+   ```
+3. Create the file `~/.config/containers/systemd/app@.container` containing
+   ```
+   [Container]
+   Environment=MY_APP=%i
+   Exec=/usr/bin/caddy run --config /etc/caddy/Caddyfile
+   Image=docker.io/library/caddy
+   Notify=true
+   Volume=%h/Caddyfile:/etc/caddy/Caddyfile:Z
+   ```
+4. Reload the system manager configuration
+   ```
+   systemctl --user daemon-reload
+   ```
+8. Start the socket for instance 1
+   ```
+   systemctl --user start app@1.socket
+   ```
+8. Start the socket for instance 2
+   ```
+   systemctl --user start app@2.socket
+   ```
+9. Run curl multiple times
+   ```
+   curl localhost:80
+   ```
+   The result is non-deterministic. Sometimes instance 1 will handle the TCP connection, sometimes instance 2.
+   Here is an example how it could look like
+   ```
+   $ curl localhost:80
+   Hello from app 1
+   $ curl localhost:80
+   Hello from app 2
+   $ curl localhost:80
+   Hello from app 2
+   $ curl localhost:80
+   Hello from app 1
+   ```
+
+</details>
+
+### Alternative 2: Use the same socket unit from multiple services
+
+A systemd socket unit can be used by multiple systemd services.
+The system manager systemd creates one socket() and the services will all inherit the same
+fd. Conceptually this works similarly to when multiple threads in a process use the same socket.
+However, here there are multiple processes that use the same socket.
+
+The systemd directive [`Sockets=`](https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html#Sockets=)
+is used to specify the sockets that a service uses.
+
+_~/.config/systemd/user/app.socket_
+```
+[Socket]
+ListenStream=80
+Service=app1.service
+```
+
+_~/.config/containers/systemd/app1.container_
+```
+[Service]
+Sockets=app.socket
+[Container]
+Image=image1
+```
+
+_~/.config/containers/systemd/app2.container_
+```
+[Service]
+Sockets=app.socket
+[Container]
+Image=image2
+```
+
+A socket unit such as _app.socket_ can only activate one service.
+For details, see [`Service=`](https://www.freedesktop.org/software/systemd/man/latest/systemd.socket.html#Service=).
+Start the services after starting the socket.
+
+```
+systemctl --user start app.socket
+systemctl --user start app1.service
+systemctl --user start app2.service
+```
+
 ## Outbound TCP/UDP connections
 
 ### Outbound TCP/UDP connections to the internet
