@@ -882,7 +882,7 @@ listens on 127.0.0.1:80.
 | host | :heavy_check_mark: | |
 
 Connecting to the host's localhost is not enabled by default for _pasta_ and _slirp4netns_ due to security reasons.
-See network mode [`host`](#host) as to why access to the host's localhost is considered insecure.
+See network mode [`host`](#host) as to why access to the host's localhost may be considered insecure.
 
 Scenario: allow curl in a container to connect to a web server on the host that listens on 127.0.0.1:8080
 
@@ -1676,12 +1676,17 @@ See the [`--network`](https://docs.podman.io/en/latest/markdown/podman-run.1.htm
 
 ## Host
 
-:warning: Using `--network=host` is considered insecure.
+:warning: Using `--network=host` may be considered insecure because it gives the container access to
 
-Quote from [podman run man page](https://docs.podman.io/en/latest/markdown/podman-run.1.html#network-mode-net):
-_"The host mode gives the container full access to local system services such as D-bus and is therefore considered insecure"._
+* abstract Unix sockets on the host system
+* TCP/UDP sockets bound to localhost on the host system
 
-See also the article [_[CVE-2020–15257] Don’t use --net=host . Don’t use spec.hostNetwork_](https://medium.com/nttlabs/dont-use-host-network-namespace-f548aeeef575) that explains why running containers in the host network namespace is insecure.
+SELinux does not allow containers to access access abstract Unix sockets on the host.
+To to allow access for such containers, pass ```--security-opt label=disable --network=host```
+
+For details, see [podman run man page](https://docs.podman.io/en/latest/markdown/podman-run.1.html#network-mode-net)
+
+See also the article [_[CVE-2020–15257] Don’t use --net=host . Don’t use spec.hostNetwork_](https://medium.com/nttlabs/dont-use-host-network-namespace-f548aeeef575)
 
 # Network backends
 
