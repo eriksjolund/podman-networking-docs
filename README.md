@@ -1099,7 +1099,7 @@ Run curl to access the web server
 
 </details>
 
-#### example: connect to host's main network interface using pasta
+#### example: connect to host's main network interface using pasta and `--add-host=example.com:host-gateway`
 
 This example shows that pasta allows a container to connect to a port on the host's main network interface
 by connecting to _host.containers.internal_, _host.docker.internal_ or to a custom hostname that is set with `--add-host=example.com:host-gateway`.
@@ -1131,9 +1131,20 @@ $ podman run --rm --network mynet --add-host=example.com:host-gateway fedora cur
 <title>Welcome to nginx!</title>
 ```
 
+When running systemd services, add `AddHost=example.com:host-gateway` under the `[Container]` section
+in the container quadlet file.
+For details, see [`AddHost=`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html) documentation.
+
+</details>
+
+#### example: connect to host's main network interface using pasta and `host.containers.internal`
+
 Instead of setting a hostname with `--add-host=example.com:host-gateway` you could also connect to
-_host.containers.internal_ or _host.docker.internal_. Podman adds those hostnames by default to
-_/etc/hosts_ in the container.
+`host.containers.internal` or `host.docker.internal`. Podman adds those hostnames by default to
+`/etc/hosts` in the container. The example requires Podman 5.3.0 or later.
+
+<details>
+  <summary>Click me</summary>
 
 ```
 $ podman run --rm fedora cat /etc/hosts | grep host.containers.internal
