@@ -1159,6 +1159,27 @@ $ podman run --rm --add-host=example.com:host-gateway fedora cat /etc/hosts | gr
 
 </details>
 
+#### example: connect to host's main network interface using pasta, docker compose and `extra_hosts:`
+
+Add
+
+```
+    extra_hosts:
+      - "myhost.example.com=host-gateway"
+```
+
+in the commpose file. It is equivalent of providing `--add-host=myhost.example.com:host-gateway`
+when using `podman run` directly. Podman 5.3.0 or later is required.
+
+For details, see [`extra_hosts`](https://github.com/docker/docs/blob/main/content/reference/compose-file/services.md#extra_hosts)
+compose directive and [podman compose](https://docs.podman.io/en/latest/markdown/podman-compose.1.html)
+man page.
+
+> [!TIP]
+> Use quadlet files instead of docker compose. Quadlets provides better systemd integration.
+> Socket activation is for example supported when using quadlets but not when using docker compose.
+> Use [podlet](https://github.com/containers/podlet) to convert the composes file to quadlet files.
+
 ## Connecting to Unix socket on the host
 
 | method | description |
