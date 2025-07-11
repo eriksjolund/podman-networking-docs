@@ -252,6 +252,7 @@ In other words, replace step 4 with
    Create the file _/home/test/.config/containers/systemd/mynet.network_ containing
    ```
    [Network]
+   Options=isolate=true
    ```
 
 At step 9 you will see that the source address __is not preserved__. Instead of 192.0.2.10 (IP address for _host1.example.com_),
@@ -326,6 +327,7 @@ Note, this is a rather experimental approach.
    ```
    [Network]
    Internal=true
+   Options=isolate=true
    ```
 6. Create the file _~/.config/systemd/user/myweb.socket_ with the contents
    ```
@@ -1123,7 +1125,7 @@ The web page was downloaded from an nginx server that listens on the host's main
 Using a custom network works too.
 
 ```
-$ podman network create mynet
+$ podman network create --opt=isolate=strict mynet
 $ podman run --rm --network mynet --add-host=example.com:host-gateway fedora curl -4 -s example.com:8080 | head -4
 <!DOCTYPE html>
 <html>
@@ -1682,8 +1684,8 @@ GitHub comments:
 * [GitHub comment](https://github.com/containers/podman/discussions/22943#discussioncomment-9795883) with a diagram of how pasta sets up custom networks.
   The diagram shows an example similar to this
   ```
-  podman network create mynet1
-  podman network create mynet2
+  podman network create --opt=isolate=strict mynet1
+  podman network create --opt=isolate=strict mynet2
   podman run --network mynet1 --name container1 ...
   podman run --network mynet1 --network mynet2 --name container2 ...
   podman run --network mynet2 --name container4 ...
@@ -1744,7 +1746,7 @@ _Netavark_ is the default network backend.
 Create the network _mynet_
 
 ```
-$ podman network create mynet
+$ podman network create --opt=isolate=strict mynet
 ```
 
 Start the container __docker.io/library/nginx__ and let it be connected to the network _mynet_
@@ -2190,6 +2192,7 @@ to support debug logging. Create a wrapper script that sets the environment vari
 2. Create file _~/.config/containers/systemd/mynet.network_ containing
    ```
    [Network]
+   Options=isolate=true
    ```
 3. Create file _~/.config/containers/systemd/whoami.container_ containing
    ```
@@ -2306,7 +2309,7 @@ In the example Podman 5.2.1 is used. Earlier Podman versions might work too.
    be used to for connecting to ports listening on the host's main network interface.
 5. Create a custom network
    ```
-   podman network create mynet
+   podman network create --opt=isolate=strict mynet
    ```
 6. Run `curl` to download a web page from a web server listening on the host's main network interface
    ```
