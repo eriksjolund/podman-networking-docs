@@ -1247,6 +1247,16 @@ There is a [Podman feature request](https://github.com/containers/podman/discuss
 for adding Podman support for `User=` in systemd system services.
 The feature request was moved into a GitHub discussion.
 
+
+The GitHub PR [26552](https://github.com/containers/podman/pull/26552) introduced a warning that
+will be logged if `podman-system-generator` encounters `User=`, `Group=` or `DynamicUser=`
+under the `[Service]` section.
+
+For example
+```
+Warning: using key User in the Service group is not supported - use at your own risk
+```
+
 ## Pasta
 
 Pasta is enabled by default if no `--network` option is provided to `podman run`.
