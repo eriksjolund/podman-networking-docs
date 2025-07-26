@@ -1792,6 +1792,443 @@ $ podman unshare --rootless-netns curl --max-time 3 10.89.0.2 | head -4
 ```
 __result:__ curl fetched the web page.
 
+# Restricting network access
+
+## Custom network option `isolate`
+
+To create a custom network that is isolated from other custom networks,
+add the option `--opt=isolate=strict` to  `podman network create`
+
+For example
+
+```
+podman network create --opt=isolate=strict mynet
+```
+
+The other alternatives `isolate=true` (the default value) and `isolate=false`
+provide less isolation than `isolate=strict`.
+
+The following table shows allowed traffic between two custom networks
+for different `isolate` values.
+
+| net1 | net2 | connection from net1 to net2 is allowed |
+| --     | --     | --                 |
+| strict | strict |                    |
+| strict | true   |                    |
+| strict | false  |                    |
+| true   | strict |                    |
+| true   | true   |                    |
+| true   | false  | :heavy_check_mark: |
+| false  | strict |                    |
+| false  | true   | :heavy_check_mark: |
+| false  | false  | :heavy_check_mark: |
+
+#### example: show effect of isolate option value
+
+The information in the preceding table can be demonstrated by the following steps:
+
+<details><summary>Click me</summary>
+
+1. Create file `test.bash` containing
+   ```
+   #!/bin/bash
+   set -o errexit
+   set -o nounset
+   check_allowed() {
+     opt1=$1
+     opt2=$2
+     net1=$(podman network create $opt1)
+     net2=$(podman network create $opt2)
+     ctr=$(podman run --rm --network ${net2} -d docker.io/library/nginx)
+     ip=$(podman container inspect $ctr | jq -r ".[0].NetworkSettings.Networks.${net2}.IPAddress")
+     if podman run --rm --network $net1 docker.io/library/fedora curl --connect-timeout 3 -sS $ip > /dev/null 2>&1; then
+       echo success
+     else
+       echo failure
+     fi
+     podman container rm -f -t0 $ctr > /dev/null
+     podman network rm $net1 > /dev/null
+     podman network rm $net2 > /dev/null
+   }
+   for i in --opt=isolate=strict --opt=isolate=true --opt=isolate=false; do
+     for j in --opt=isolate=strict --opt=isolate=true --opt=isolate=false; do
+       echo -n "from $i to $j result = "
+       check_allowed $i $j
+     done
+   done
+   ```
+2. Run the script
+   ```
+   bash test.bash
+   ```
+   The following output is printed
+   ```
+   from --opt=isolate=strict to --opt=isolate=strict result = failure
+   from --opt=isolate=strict to --opt=isolate=true result = failure
+   from --opt=isolate=strict to --opt=isolate=false result = failure
+   from --opt=isolate=true to --opt=isolate=strict result = failure
+   from --opt=isolate=true to --opt=isolate=true result = failure
+   from --opt=isolate=true to --opt=isolate=false result = success
+   from --opt=isolate=false to --opt=isolate=strict result = failure
+   from --opt=isolate=false to --opt=isolate=true result = success
+   from --opt=isolate=false to --opt=isolate=false result = success
+   ```
+
+</details>
+
+
+## Containers can be connected to multiple custom networks
+
+A container can be connected to multiple custom networks.
+
+For example, this nginx container is connected to two networks.
+```
+podman network create --opt=isolate=strict net1
+podman network create --opt=isolate=strict net2
+podman run --rm --network net1 --network net2 docker.io/library/nginx
+```
+
+`Network=` can be specified multiple times in a container quadlet file
+
+#### example: nginx container connected to two networks using quadlets
+
+<details>
+<summary>Click me</summary>
+
+1. Create file `$HOME/.config/containers/systemd/net1.network` containing
+   ```
+   [Network]
+   NetworkName=net1
+   Options=isolate=true
+   ```
+2. Create file `$HOME/.config/containers/systemd/net2.network` containing
+   ```
+   [Network]
+   NetworkName=net2
+   Options=isolate=true
+   ```
+3. Create file `$HOME/.config/containers/systemd/nginx.container` containing
+   ```
+   [Container]
+   Image=docker.io/library/nginx
+   Network=net1.network
+   Network=net2.network
+   ```
+4. Reload the systemd user manager
+   ```
+   systemctl --user daemon-reload
+   ```
+5. Start the nginx service
+   ```
+   systemctl --user start nginx.service
+   ```
+
+</details>
+
+## Internal custom network
+
+To prevent containers on a custom network to connect to the internet,
+add `--internal` to `podman network create`.
+
+For example
+```
+podman network create --internal mynet
+```
+
+For network quadlets add `Internal=true`
+
+```
+[Network]
+Internal=true
+```
+
+You can combine this setting with `Options=isolate=true`
+```
+[Network]
+Internal=true
+Options=isolate=true
+```
+
+A container connected to an internal custom network can have TCP/UDP sockets listening to the internet
+by using _socket activation_ or the quadlet configuration `PublishPort=`.
+
+## Restrict container network access with `Network=none`
+
+The quadlet configuration `Network=none` prevents a container from
+connecting to the internet.
+
+```
+[Container]
+Network=none
+```
+
+Combining `PublishPort=` with `Network=none` does not work.
+Podman would then write a warning
+
+```
+Port mappings have been discarded as one of the Host, Container, Pod, and None network modes are in use
+```
+
+Socket-activated sockets are not affected by `Network=none`.
+In other words, it is possible to run a socket-activated web server
+container configured with `Network=none`.
+
+See the blog post [_How to limit container privilege with socket activation_](https://www.redhat.com/sysadmin/socket-activation-podman)
+
+#### example: use `Network=none` to restrict Caddy web server
+
+<details>
+  <summary>Click me</summary>
+
+1. Create file `$HOME/Caddyfile` containing
+   ```
+   {
+     admin off
+   }
+
+   http://localhost {
+	   bind fd/3 {
+		   protocols h1
+	   }
+	   log
+	   respond "Hello world
+   "
+   }
+   ```
+2. Create file `$HOME/.config/systemd/user/caddy.socket` containing
+   ```
+   [Socket]
+
+   ListenStream=[::]:8080
+   BindIPv6Only=both
+
+   [Install]
+   WantedBy=sockets.target
+   ```
+3. Create file `$HOME/.config/containers/systemd/caddy.container` containing
+   ```
+   [Container]
+   Exec=/usr/bin/caddy run --config /etc/caddy/Caddyfile
+   Image=docker.io/library/caddy
+   Network=none
+   Notify=true
+   Volume=%h/Caddyfile:/etc/caddy/Caddyfile:Z
+   ```
+4. Reload the systemd user manager
+   ```
+   systemctl --user daemon-reload
+   ```
+5. Pull the caddy image
+   ```
+   podman pull docker.io/library/caddy
+   ```
+6. Start the caddy socket
+   ```
+   systemctl --user start caddy.socket
+   ```
+7. Fetch a web page with curl
+   ```
+   curl -s http://localhost:8080
+   ```
+   The command prints the following output
+   ```
+   Hello world
+   ```
+
+</details>
+
+## Restrict network access for container, Podman and OCI runtime
+
+The systemd configuration [`RestrictAddressFamilies=`](https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#RestrictAddressFamilies=)
+limits the socket address families available to the container.
+Socket-activated sockets are not affected by this setting.
+
+When using socket activation, the system manager (systemd) creates the socket.
+The socket is inherited by the container process because of the Podman fork/exec architecture
+as shown by the following diagram:
+
+``` mermaid
+stateDiagram-v2
+    [*] --> systemd: first client connects
+    systemd --> podman: socket inherited via fork/exec
+    state "OCI runtime" as s2
+    podman --> conmon: socket inherited via double fork/exec
+    conmon --> s2: socket inherited via fork/exec
+    s2 --> container: socket inherited via exec
+```
+
+It is possible to restrict podman, conmon, the OCI runtime and the container from
+creating AF_INET and AF_INET6 sockets by setting `RestrictAddressFamilies=AF_UNIX AF_NETLINK`
+under the `[Service]` section in the container quadlet.
+
+```
+[Service]
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
+NoNewPrivileges=yes
+SystemCallArchitectures=native
+[Container]
+Pull=never
+Network=none
+```
+
+`Pull=never` is required because `RestrictAddressFamilies=AF_UNIX AF_NETLINK`
+restricts podman from connecting to container image registries.
+
+If podman, conmon, the OCI runtime or the container would be comprised due to
+a security vulnerability, an intruder would not have the privileges to use the
+compromised program as a spam bot, because the intruder does not have the privileges to
+create AF_INET and AF_INET6 sockets.
+
+If you would set up a such a restricted container quadlet, starting service
+might fail with the error message
+```
+newuidmap: write to uid_map failed: Operation not permitted
+```
+
+The systemd setting `NoNewPrivileges=yes` prevents the extra
+capabilities given to  `/usr/bin/newuidmap` and  `/usr/bin/newgidmap`
+from having any effect.
+
+```
+$ getcap /usr/bin/newuidmap
+/usr/bin/newuidmap cap_setuid=ep
+$ getcap /usr/bin/newgidmap
+/usr/bin/newgidmap cap_setgid=ep
+$
+```
+
+Podman uses the commands `/usr/bin/newuidmap` and  `/usr/bin/newgidmap` to set up
+the user namespace. Podman needs to do this once per session
+before any container can be started.
+
+As a workaround set up an extra systemd service that creates
+the podman user namespace with the command `/usr/bin/podman unshare /bin/true`
+
+```
+[Unit]
+Description=podman-usernamespace.service
+
+[Service]
+Type=oneshot
+Restart=on-failure
+TimeoutStopSec=70
+ExecStart=/usr/bin/podman unshare /bin/true
+RemainAfterExit=yes
+```
+
+[`RestrictAddressFamilies=`](https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#RestrictAddressFamilies=)
+is not supported for some CPU architectures.
+
+The man page recommends adding
+```
+SystemCallArchitectures=native
+```
+or similar when using `RestrictAddressFamilies=`
+
+See also the blog post [_How to restrict network access in Podman with systemd_](https://www.redhat.com/sysadmin/podman-systemd-limit-access)
+
+#### example: use `RestrictAddressFamilies=` to restrict Caddy web server
+
+Configure a caddy container quadlet with `RestrictAddressFamilies=AF_UNIX AF_NETLINK`
+to restrict caddy, podman, conmon and runc.
+
+This example is similar
+to [_example: use Network=none to restrict Caddy web server_](#example-use-networknone-to-restrict-caddy-web-server)
+but adds even more restrictions.
+
+<details>
+  <summary>Click me</summary>
+
+1. Create file `$HOME/Caddyfile` containing
+   ```
+   {
+     admin off
+   }
+
+   http://localhost {
+	   bind fd/3 {
+		   protocols h1
+	   }
+	   log
+	   respond "Hello world
+   "
+   }
+   ```
+2. Create file `$HOME/.config/systemd/user/caddy.socket` containing
+   ```
+   [Socket]
+
+   ListenStream=[::]:8080
+   BindIPv6Only=both
+
+   [Install]
+   WantedBy=sockets.target
+   ```
+3. Create file `$HOME/.config/containers/systemd/caddy.container` containing
+   ```
+   [Unit]
+   After=podman-usernamespace.service
+   Requires=podman-usernamespace.service
+
+   [Service]
+   RestrictAddressFamilies=AF_UNIX AF_NETLINK
+   NoNewPrivileges=yes
+   SystemCallArchitectures=native
+
+   [Container]
+   GlobalArgs=--runtime=runc
+   Exec=/usr/bin/caddy run --config /etc/caddy/Caddyfile
+   Image=docker.io/library/caddy
+   Network=none
+   Notify=true
+   Pull=never
+   Volume=%h/Caddyfile:/etc/caddy/Caddyfile:Z
+   ```
+4. Create file `$HOME/.config/systemd/user/podman-usernamespace.service` containing
+   ```
+   [Unit]
+   Description=podman-usernamespace.service
+
+   [Service]
+   Type=oneshot
+   Restart=on-failure
+   TimeoutStopSec=70
+   ExecStart=/usr/bin/podman unshare /bin/true
+   RemainAfterExit=yes
+   ```
+5. Reload the systemd user manager
+   ```
+   systemctl --user daemon-reload
+   ```
+6. Pull the caddy image
+   ```
+   podman pull docker.io/library/caddy
+   ```
+7. Start the caddy socket
+   ```
+   systemctl --user start caddy.socket
+   ```
+8. Fetch a web page with curl
+   ```
+   curl -s http://localhost:8080
+   ```
+   The command prints the following output
+   ```
+   Hello world
+   ```
+
+Note that `runc` is used in the example because of this configuration line in the file `caddy.container`
+
+```
+   GlobalArgs=--runtime=runc
+```
+
+The example also works with `crun` 1.23 or later. In fact, the example should also work with
+older crun versions between 1.5 and 1.16.1. (crun 1.17 introduced a regression bug that
+was fixed in crun 1.23).
+
+</details>
+
 # Capture network traffic
 
 The pasta option __--pcap__ enables capturing of network traffic.
