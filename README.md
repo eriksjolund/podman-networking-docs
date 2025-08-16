@@ -1951,6 +1951,21 @@ Image=
 
 </details>
 
+## `PublishPort=`
+
+The directive [`PublishPort=`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#publishport) can be specified under the `[Container]` section in a quadlet container unit (file path suffix _.container_)
+
+`PublishPort=` is used for publishing a port on the host.
+
+Note, containers on a custom network can access each other without using `PublishPort=`
+
+You can avoid using `PublishPort=` if you instead can use the following software architecture:
+
+* a socket-activated HTTP reverse proxy that is connected to a custom network
+* backend containers that are connected to the same custom network
+
+See also [HTTP reverse proxy](#http-reverse-proxy)
+
 # Restricting network access
 
 ## Custom network option `isolate`
