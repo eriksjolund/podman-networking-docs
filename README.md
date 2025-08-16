@@ -1792,6 +1792,165 @@ $ podman unshare --rootless-netns curl --max-time 3 10.89.0.2 | head -4
 ```
 __result:__ curl fetched the web page.
 
+# Quadlets
+
+## Introduction
+
+To create systemd services that run podman, write quadlet files.
+
+For an introduction to quadlets, see
+https://github.com/eriksjolund/podman-quadlet-docs
+(The document is currently work-in-progress. It is quite small but will hopefully
+be expanded in the future)
+
+## quadlet directives
+
+For a complete list of quadlet directives, see the man page
+[podman-systemd.unit](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html)
+
+## `Network=`
+
+The directive `Network=` can be specified under the `[Container]` section in a quadlet container unit (file path suffix _.container_)
+
+`Network=` can only be listed one time when using `Network=none`, `Network=pasta:...` or `Network=slirp4netns:....`
+
+`Network=` can be listed multiple times when specifying custom networks.
+
+### `Network=none`
+
+Recommendation:
+
+Use `Network=none` if you have a container that does not use the network.
+Socket-activated sockets are not affected by `Network=none`
+
+A socket-activated web server still works if the web server
+only needs to communicate over the sockets it inherited
+from socket activation.
+
+Rootless quadlet container units will by default
+depend on the unit _podman-user-wait-network-online.service_
+
+This dependency is not needed when using `Network=none`.
+Add
+
+```
+[Quadlet]
+DefaultDependencies=false
+```
+
+to the container unit file to avoid the unnecessary dependency on
+_podman-user-wait-network-online.service_
+
+For more information about _podman-user-wait-network-online.service_,
+see the troubleshooting tip
+[_systemd user service generated from quadlet fails after reboot. Error message External interface not usable_](#systemd-user-service-generated-from-quadlet-fails-after-reboot-error-message-external-interface-not-usable)
+
+### `Network=pasta`
+
+`Network=pasta` is the default value when using rootless Podman.
+
+Pasta options such as `--map-gw` can be specified:
+
+```
+Network=pasta:--map-gw
+```
+
+### Connect to a custom network with `Network=mynet.network`
+
+A custom network can be set by using the custom network name
+or the filename of the network unit.
+
+```
+Network=mynet1.network
+Network=mynet2.network
+Network=mynet3.network
+```
+
+| alternative syntax | description | extra dependencies added |
+| --  | --  | --  |
+| Network=mynet | _mynet_ is the network name | |
+| Network=mynet.network | _mynet.network_ is the quadlet filename | :heavy_check_mark: |
+
+Recommendation: Use `Network=mynet.network` syntax. Dependencies are then added automatically:
+
+```
+Requires=mynet-network.service
+After=mynet-network.service
+```
+
+## `NetworkName=`
+
+The directive `NetworkName=` can be specified under the `[Network]` section in a quadlet network unit (file path suffix _.network_)
+
+Set the name of the custom network.
+
+The default network name given by Podman is `network-$filename`
+
+## `Pod=`
+
+The directive `Pod=` can be specified under the `[Container]` section.
+
+All containers in a pod needs to have the same UID/GID mapping.
+
+Instead of using `Pod=`, it is often possible to use a custom network instead.
+This allows the containers to have different UID/GID mapping.
+
+#### example: convert software architecture from pod to custom network
+
+<details>
+  <summary>Click me</summary>
+
+TODO: work-in-progress
+
+Currenlty a sketch:
+
+Replace the following files
+
+`$HOME/.config/containers/systemd/mypod.pod`
+```
+[Pod]
+```
+
+`$HOME/.config/containers/systemd/webserver.container`
+```
+[Container]
+Pod=mypod.pod
+Image=
+```
+
+`$HOME/.config/containers/systemd/curl.container`
+```
+[Container]
+Pod=mypod.pod
+Image=
+```
+
+with
+
+
+`$HOME/.config/containers/systemd/mynet.network`
+```
+[Network]
+Options=isolate=true
+NetworkName=mynet
+```
+
+`$HOME/.config/containers/systemd/webserver.container`
+```
+[Container]
+Network=mynet.network
+Image=
+```
+
+`$HOME/.config/containers/systemd/curl.container`
+```
+[Container]
+Network=mynet.network
+Image=
+```
+
+</details>
+
 # Restricting network access
 
 ## Custom network option `isolate`
