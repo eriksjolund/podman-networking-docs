@@ -1104,7 +1104,7 @@ Run curl to access the web server
 #### example: connect to host's main network interface using pasta and `--add-host=example.com:host-gateway`
 
 This example shows that pasta allows a container to connect to a port on the host's main network interface
-by connecting to _host.containers.internal_, _host.docker.internal_ or to a custom hostname that is set with `--add-host=example.com:host-gateway`.
+by connecting to a custom hostname that is set with `--add-host=example.com:host-gateway`.
 The example requires Podman 5.3.0 or later.
 
 <details>
