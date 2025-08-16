@@ -1810,7 +1810,7 @@ For a complete list of quadlet directives, see the man page
 
 ## `Network=`
 
-The directive `Network=` can be specified under the `[Container]` section in a quadlet container unit (file path suffix _.container_)
+The directive [`Network=`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#network) can be specified under the `[Container]` section in a quadlet container unit (file path suffix _.container_)
 
 `Network=` can only be listed one time when using `Network=none`, `Network=pasta:...` or `Network=slirp4netns:....`
 
@@ -1880,7 +1880,7 @@ After=mynet-network.service
 
 ## `NetworkName=`
 
-The directive `NetworkName=` can be specified under the `[Network]` section in a quadlet network unit (file path suffix _.network_)
+The directive [`NetworkName=`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#networkname) can be specified under the `[Network]` section in a quadlet network unit (file path suffix _.network_)
 
 Set the name of the custom network.
 
@@ -1888,7 +1888,7 @@ The default network name given by Podman is `network-$filename`
 
 ## `Pod=`
 
-The directive `Pod=` can be specified under the `[Container]` section.
+The directive [`Pod=`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#pod) can be specified under the `[Container]` section in a quadlet container unit (file path suffix _.container_)
 
 All containers in a pod needs to have the same UID/GID mapping.
 
