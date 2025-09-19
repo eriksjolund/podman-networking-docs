@@ -865,11 +865,26 @@ An example of an outbound TCP/UDP connection to the internet
 is when a container downloads a file from a
 web server on the internet.
 
+| method | support for outbound TCP/UDP connections to the internet | comment |
+|-|-|-|
+| pasta | :heavy_check_mark: | |
+| slirp4netns | :heavy_check_mark: | |
+| custom network | :heavy_check_mark: | `Internal=false` is requried (which is the default) |
+| host | :heavy_check_mark: | |
+| none |  | side note: it is possible to combine `--network=none` with [`--preserve-fds`](https://docs.podman.io/en/latest/markdown/podman-run.1.html#preserve-fds-n) |
+
+Performance of the different methods:
+
 | method | native performance |
 |-|-|
 | pasta | |
 | slirp4netns | |
+| custom network | |
 | host | :heavy_check_mark: |
+| `--preserve-fds` (using already established TCP connections) | :heavy_check_mark: |
+
+Using `--preserve-fds` to pass in already established TCP connections is not very useful because
+special support in the container is required.
 
 ## Outbound TCP/UDP connections to the host's localhost
 
