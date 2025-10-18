@@ -1704,9 +1704,11 @@ GitHub comments:
 
 Talks:
 
-* March 2023 [_passt & pasta: Modern unprivileged networking for containers and VMs_](https://www.youtube.com/watch?v=QMUEtEt1i3I) from conference _Everything Open_ Melbourne, Australia.
-* June 2023 [_Root is less: container networks get in shape with pasta - DevConf.CZ_](https://devconfcz2023.sched.com/event/1MYld/root-is-less-container-networks-get-in-shape-with-pasta) video: [youtube](https://www.youtube.com/watch?v=tlxDmUPc4WY), slides: [pdf](https://static.sched.com/hosted_files/devconfcz2023/b5/pasta_devconf.pdf)
-* June 2024 [_Podman networking deep dive - DevConf.CZ_](https://pretalx.com/devconf-cz-2024/talk/BVM77L/) video: [youtube](https://youtu.be/MCY6APZ4x3A?si=Pp64Vcpa8l3qmfm-&t=1180), slides: [pdf](https://pretalx.com/media/devconf-cz-2024/submissions/BVM77L/resources/Devconf.cz_podman_networking_rQ3aMf1.pdf)
+
+* June 2024 [_Podman networking deep dive - DevConf.CZ_](https://pretalx.com/devconf-cz-2024/talk/BVM77L/) video: [youtube](https://youtu.be/MCY6APZ4x3A?si=Pp64Vcpa8l3qmfm-&t=1180), slides: [pdf](https://pretalx.com/media/devconf-cz-2024/submissions/BVM77L/resources/Devconf.cz_podman_networking_rQ3aMf1.pdf) from conference _DevConf.cz_ in Brno, Czech Republic.
+* April 2024 [_Rootless networking: From possible to practical_](https://2024.everythingopen.au/schedule/presentation/37/) video: [youtube](https://www.youtube.com/watch?v=Mj_oiVscayA) from conference _Everything Open 2024_ in Gladstone, Australia.
+* June 2023 [_Root is less: container networks get in shape with pasta - DevConf.CZ_](https://devconfcz2023.sched.com/event/1MYld/root-is-less-container-networks-get-in-shape-with-pasta) video: [youtube](https://www.youtube.com/watch?v=tlxDmUPc4WY), slides: [pdf](https://static.sched.com/hosted_files/devconfcz2023/b5/pasta_devconf.pdf) from conference _DevConf.cz_ in Brno, Czech Republic.
+* March 2023 [_passt & pasta: Modern unprivileged networking for containers and VMs_](https://2023.everythingopen.au/schedule/presentation/4/) video: [youtube](https://www.youtube.com/watch?v=QMUEtEt1i3I) from conference _Everything Open 2023_ in Melbourne, Australia.
 
 ## Slirp4netns
 
