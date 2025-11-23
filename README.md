@@ -2,6 +2,12 @@
 
 This guide is about how to configure networking when using __rootless Podman__.
 
+> [!NOTE]
+> Support for Slirp4nets will be removed in Podman 6.0 (if things goes according to plan)
+
+See [Podman 6.0 design document](https://github.com/containers/podman/blob/main/contrib/design-docs/podman6hld.md).
+__Solution:__ Use Pasta instead.
+
 # Inbound TCP/UDP connections
 
 ## Overview
@@ -1711,6 +1717,12 @@ Talks:
 * March 2023 [_passt & pasta: Modern unprivileged networking for containers and VMs_](https://2023.everythingopen.au/schedule/presentation/4/) video: [youtube](https://www.youtube.com/watch?v=QMUEtEt1i3I) from conference _Everything Open 2023_ in Melbourne, Australia.
 
 ## Slirp4netns
+
+> [!NOTE]
+> Support for Slirp4nets will be removed in Podman 6.0 (if things goes according to plan)
+
+See [Podman 6.0 design document](https://github.com/containers/podman/blob/main/contrib/design-docs/podman6hld.md).
+__Solution:__ Use Pasta instead.
 
 Slirp4netns is similar to Pasta but is slower and has less functionality.
 Slirp4netns was the default rootlessNetworkCmd before Podman 5.0.0 (released March 2024).
