@@ -1969,7 +1969,22 @@ Image=
 
 The directive [`PublishPort=`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#publishport) can be specified under the `[Container]` section in a quadlet container unit (file path suffix _.container_)
 
-`PublishPort=` is used for publishing a port on the host.
+The directive [`PublishPort=`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#publishport) can also be specified under the `[Pod]` section in a quadlet pod unit (file path suffix _.pod_)
+
+The directive `PublishPort=` is used for publishing a port on the host. The directive `PublishPort=` can be used together with `Network=pasta`, `Network=slirp4netns` or `Network=mynet.network` (custom network).
+
+Avoid `PublishPort=` if the container supports socket activation. Use socket activation instead because socket activation has better performance and comes with more features.
+
+If a container does not run in a pod, specify `PublishPort=` under the `[Container]` section.
+
+If a container runs in a pod, specify `PublishPort=` under the `[Pod]` section.
+
+Do not specify `PublishPort=` when using `Network=host`. The directive is then discarded and a warning is printed
+```
+$ podman run --rm -p 8080:8080 --network=host docker.io/traefik/whoami -port 8080
+Port mappings have been discarded because "host" network namespace mode does not support them
+2025/11/23 20:31:49 Starting up on port 8080
+```
 
 Note, containers on a custom network can access each other without using `PublishPort=`
 
@@ -1979,6 +1994,37 @@ You can avoid using `PublishPort=` if you instead can use the following software
 * backend containers that are connected to the same custom network
 
 See also [HTTP reverse proxy](#http-reverse-proxy)
+
+Using `PublishPort=` will fail if any of the port numbers are too low.
+
+PublishPort=_hostport_:_containerport_
+
+_hostport_ needs to be greater or equal than the value `ip_unprivileged_port_start` on the host,
+otherwise pasta (or slirp4netns) fails to bind to _hostport_.
+
+```
+$ cat /proc/sys/net/ipv4/ip_unprivileged_port_start
+1024
+```
+
+If the container user is _root_ (`User=0:0`), then _containerport_ may be any port number.
+
+If the container user is an unprivileged user (for example `User=1000:1000`), then _containerport_
+must be greater or equal than the value `ip_unprivileged_port_start` in the container, otherwise
+the container process will get permission denied when trying to bind to the port number _containerport_.
+
+The value `ip_unprivileged_port_start` in the container is `1024` by default.
+```
+$ podman run --rm alpine cat /proc/sys/net/ipv4/ip_unprivileged_port_start
+1024
+```
+To set `ip_unprivileged_port_start` in the container to `80`, run
+```
+$ podman run --rm --sysctl net.ipv4.ip_unprivileged_port_start=80 \
+    alpine cat /proc/sys/net/ipv4/ip_unprivileged_port_start
+80
+```
+For quadlet use `Sysctl=net.ipv4.ip_unprivileged_port_start=80`
 
 # Restricting network access
 
