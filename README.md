@@ -2463,6 +2463,120 @@ was fixed in crun 1.23).
 
 </details>
 
+## Set up container firewall
+
+Configure the container firewall in a `createContainer` stage hook script.
+This configuration is performed before the container is started.
+The container process does not have privileges to read or write the firewall,
+because the capability `NET_ADMIN` is not given to the container by default.
+For details about capabilities,
+see [__capabilities(7)__](https://man7.org/linux/man-pages/man7/capabilities.7.html).
+
+> [!IMPORTANT]
+> Do not specify `--cap-add net_admin` or `--privileged` when running a container that has
+> a container firewall set up with a hook script, because the container process would
+> then have the privilege to modify the firewall.
+
+#### example: set up firewall that allows outgoing TCP/443 and UDP/53
+
+Configure the container firewall to allow outgoing TCP/443 and UDP/53 but to drop
+outgoing traffic for other TCP and UDP ports.
+Show that curl in the container can download https://podman.io but not http://podman.io
+
+Requirements:
+
+The command `nft` needs to be installed on the host.
+
+<details>
+<summary>Click me</summary>
+
+1. Check that the executable `/usr/bin/nft` from nftables is available on the host
+   ```
+   ls /usr/bin/nft
+   ```
+   The following output is expected
+   ```
+   /usr/bin/nft
+   ```
+2. Create hooks dir
+   ```
+   mkdir $HOME/hooks.d
+   ```
+   The directory path was arbitrarily chosen.
+3, Create policy file `$HOME/hooks.d/foobar.json` containing
+   ```
+   {
+     "version": "1.0.0",
+     "hook": {
+       "path": "/home/test/configure-firewall.bash"
+     },
+     "when": {
+       "annotations": {
+         "^myannotation$": "yes"
+       }
+     },
+     "stages": ["createContainer"]
+   }
+   ```
+   The filename `foobar.json` and the path
+   `/home/test/configure-firewall.bash` were arbitrarily chosen.
+   The strings `myannotation` and `yes` were arbitrarily chosen.
+4. Create file `/home/test/configure-firewall.bash` containing
+   ```
+   #!/bin/bash
+   echo "
+   table inet filter {
+     chain output {
+       type filter hook output priority filter; policy drop;
+       tcp dport 443 accept
+       udp dport 53 accept
+     }
+   }
+   " | /usr/bin/nft -f -
+   ```
+5. Change file permissions
+   ```
+   chmod 755 /home/test/configure-firewall.bash
+   ```
+6. Run curl command to dowload http://podman.io
+   ```
+   podman run \
+       --rm \
+       --hooks-dir ~/hooks.d \
+       --annotation myannotation=yes \
+       docker.io/library/fedora \
+       bash -c "curl -sS --connect-timeout 3 http://podman.io | head -1"
+   ```
+   The command fails and the following error is printed
+   ```
+   curl: (28) Connection timed out after 3000 millisecond
+   ```
+7. Run curl command to dowload https://podman.io
+   ```
+   podman run \
+       --rm \
+       --hooks-dir ~/hooks.d \
+       --annotation myannotation=yes \
+       docker.io/library/fedora \
+       bash -c "curl -sS --connect-timeout 3 https://podman.io | head -1"
+   ```
+   The command succeeds and the following output is printed
+   ```
+   <!doctype html>
+   ```
+
+When configuring a container unit (quadlet), specify the hooks directory with [`GlobalArgs=`](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#globalargs) under the `[Container]` section.
+For example
+```
+GlobalArgs=--hooks-dir=%h/hooks.d
+```
+The string `%h` is a [systemd specifier](https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html#Specifiers) that is replaced with the home directory.
+
+</details>
+
+See also blog post [_Firewall a podman container_](https://jerabaul29.github.io/jekyll/update/2025/10/17/Firewall-a-podman-container.html)
+by Jean Rabault (published October 2025). See also Podman GitHub [discussion](https://github.com/containers/podman/discussions/27099).
+
 # Capture network traffic
 
 The pasta option __--pcap__ enables capturing of network traffic.
