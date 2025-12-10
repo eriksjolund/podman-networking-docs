@@ -2503,7 +2503,7 @@ The command `nft` needs to be installed on the host.
    mkdir $HOME/hooks.d
    ```
    The directory path was arbitrarily chosen.
-3, Create policy file `$HOME/hooks.d/foobar.json` containing
+3. Create policy file `$HOME/hooks.d/foobar.json` containing
    ```
    {
      "version": "1.0.0",
