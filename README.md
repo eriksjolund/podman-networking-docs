@@ -2540,9 +2540,10 @@ The command `nft` needs to be installed on the host.
    ```
 6. Run curl command to dowload http://podman.io
    ```
-   podman run \
-       --rm \
+   podman \
        --hooks-dir ~/hooks.d \
+       run \
+       --rm \
        --annotation myannotation=yes \
        docker.io/library/fedora \
        bash -c "curl -sS --connect-timeout 3 http://podman.io | head -1"
@@ -2553,9 +2554,10 @@ The command `nft` needs to be installed on the host.
    ```
 7. Run curl command to dowload https://podman.io
    ```
-   podman run \
-       --rm \
+   podman \
        --hooks-dir ~/hooks.d \
+       run \
+       --rm \
        --annotation myannotation=yes \
        docker.io/library/fedora \
        bash -c "curl -sS --connect-timeout 3 https://podman.io | head -1"
