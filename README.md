@@ -2538,7 +2538,7 @@ The command `nft` needs to be installed on the host.
    ```
    chmod 755 /home/test/configure-firewall.bash
    ```
-6. Run curl command to dowload http://podman.io
+6. Run curl command to download http://podman.io
    ```
    podman \
        --hooks-dir ~/hooks.d \
@@ -2552,7 +2552,7 @@ The command `nft` needs to be installed on the host.
    ```
    curl: (28) Connection timed out after 3000 millisecond
    ```
-7. Run curl command to dowload https://podman.io
+7. Run curl command to download https://podman.io
    ```
    podman \
        --hooks-dir ~/hooks.d \
