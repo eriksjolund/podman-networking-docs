@@ -908,15 +908,154 @@ The IP address `10.0.2.2` is a special address used by slirp4netns.
 
 #### example: connect to host's localhost using the pasta option `--map-gw`
 
-Add the pasta option `--map-gw` and connect to `10.0.2.2:8080`
+Add `--network=pasta:--map-gw`
+
+If the container process connects to the default gateway, pasta redirects that TCP connection to the host's localhost.
+
+<details>
+<summary>Click me</summary>
+
+1. Start a python web server listening on `127.0.0.1:8080` in the host network namespace
+   ```
+   podman run \
+     --rm \
+     --network host \
+     --name web \
+     -d \
+     -w /etc/terminfo \
+     docker.io/library/python \
+       python3 \
+       -m http.server 8080 \
+       --bind 127.0.0.1
+   ```
+2. Optional step: show TCP socket being bound to `127.0.0.1:8080`
+   ```
+   ss -tlnp | grep 8080
+   ```
+   The following output is printed
+   ```
+   LISTEN 0      5          127.0.0.1:8080      0.0.0.0:*
+   ```
+3. Set a shell variable to the default gateway IP address
+   ```
+   defaultgw=$(ip --json route show default | jq -r '.[0].gateway')
+   ```
+4. Download from the web server
+   ```
+   podman run \
+     --rm \
+     --network=pasta:--map-gw \
+     docker.io/library/fedora \
+       curl -s -S ${defaultgw}:8080 | head -1
+   ```
+   The following output is printed
+   ```
+   <!DOCTYPE HTML>
+   ```
+5. Show the logs from the web server
+   ```
+   podman logs web
+   ```
+   The following output is printed
+   ```
+   127.0.0.1 - - [03/Jan/2026 14:25:41] "GET / HTTP/1.1" 200 -
+   ```
+
+</details>
+
+#### example: connect to host's localhost using the pasta option `--map-gw` and reconfigure default gateway
+
+In the previous example, the default gateway IP address was used.
+Alternatively, you could also set the default gateway IP address to `10.0.2.2` by adding
+`--network=pasta:--map-gw,--ipv4-only,-a,10.0.2.0,-n,24,-g,10.0.2.2`
+
+If the container process connects to `10.0.2.2`, pasta redirects that TCP connection to the host's localhost.
+
+<details>
+<summary>Click me</summary>
+
+1. Start a python web server listening on `127.0.0.1:8080` in the host network namespace
+   ```
+   podman run \
+     --rm \
+     --network host \
+     --name web \
+     -d \
+     -w /etc/terminfo \
+     docker.io/library/python \
+       python3 \
+       -m http.server 8080 \
+       --bind 127.0.0.1
+   ```
+2. Optional step: show TCP socket being bound to `127.0.0.1:8080`
+   ```
+   ss -tlnp | grep 8080
+   ```
+   The following output is printed
+   ```
+   LISTEN 0      5          127.0.0.1:8080      0.0.0.0:*
+   ```
+3. Set shell variable
+   ```
+   network=pasta
+   ```
+   (`network` is just a temporary shell variable used in this tutorial)
+4. Append option `--map-gw`
+   ```
+   network=${network}:--map-gw
+   ```
+   Side note: `--map-gw` is actually not a pasta option, see note below.
+5. Append option [`--ipv4-only`](https://passt.top/builds/latest/web/passt.1.html)
+   ```
+   network=${network},--ipv4-only
+   ```
+6. Append option [`--address`](https://passt.top/builds/latest/web/passt.1.html)
+   ```
+   network=${network},--address,10.0.2.0
+   ```
+7. Append option [`--netmask`](https://passt.top/builds/latest/web/passt.1.html)
+   ```
+   network=${network},--netmask,24
+   ```
+8. Append option [`--gateway`](https://passt.top/builds/latest/web/passt.1.html)
+   ```
+   network=${network},--gateway,10.0.2.2
+   ```
+9. Use the pasta options and run curl to download from the web server
+   ```
+   podman run \
+     --rm \
+     --network=${network} \
+     docker.io/library/fedora \
+       curl \
+       -s -S \
+       10.0.2.2:8080 | head -1
+   ```
+   The following output is printed
+   ```
+   <!DOCTYPE HTML>
+   ```
+10. Show the logs from the web server
+    ```
+    podman logs web
+    ```
+    The following output is printed
+    ```
+    127.0.0.1 - - [03/Jan/2026 14:35:18] "GET / HTTP/1.1" 200 -
+    ```
+
+> [!NOTE]
+> The option `--map-gw` is provided to podman as a pasta option. The option is actually not a pasta option
+> but the option instructs podman to not set the pasta option `--no-map-gw
 
 ```
-podman run --rm \
-           --network=pasta:--map-gw \
-           registry.fedoraproject.org/fedora curl 10.0.2.2:8080
+$ pasta --help | grep -- --no-map-gw
+  --no-map-gw		Don't map gateway address to host
+$ pasta --help | grep -- --map-gw
+$
 ```
 
-The IP address `10.0.2.2` is a special address used by pasta.
+</details>
 
 #### example: connect to host's localhost using the pasta option `--map-host-loopback`
 
