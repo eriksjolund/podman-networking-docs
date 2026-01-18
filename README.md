@@ -1009,15 +1009,15 @@ If the container process connects to `10.0.2.2`, pasta redirects that TCP connec
    ```
    network=${network},--ipv4-only
    ```
-6. Append option [`--address`](https://passt.top/builds/latest/web/passt.1.html)
+6. Append option [`--address`](https://passt.top/builds/latest/web/passt.1.html#a)
    ```
    network=${network},--address,10.0.2.0
    ```
-7. Append option [`--netmask`](https://passt.top/builds/latest/web/passt.1.html)
+7. Append option [`--netmask`](https://passt.top/builds/latest/web/passt.1.html#n)
    ```
    network=${network},--netmask,24
    ```
-8. Append option [`--gateway`](https://passt.top/builds/latest/web/passt.1.html)
+8. Append option [`--gateway`](https://passt.top/builds/latest/web/passt.1.html#g)
    ```
    network=${network},--gateway,10.0.2.2
    ```
@@ -1066,10 +1066,13 @@ The IP address _11.11.11.11_ was chosen arbitrarily.
 podman run -ti --rm --network=pasta:--map-host-loopback=11.11.11.11 docker.io/library/fedora curl -s -4 11.11.11.11:8080
 ```
 
+For details, see [`--map-host-loopback`](https://passt.top/builds/latest/web/passt.1.html#map-host-loopback)
+
 #### example: connect to host's localhost using the pasta option `--tcp-ns` (`-T`)
 
 For better performance and security, pasta offers an alternative to using `--map-gw`.
-The option `-T` (`--tcp-ns`) configures TCP port forwarding from the container network namespace to the init network namespace.
+The `-T` (`--tcp-ns`) [option](https://passt.top/builds/latest/web/passt.1.html#T) configures TCP port
+forwarding from the container network namespace to the init network namespace.
 
 ```
 podman run --rm \
@@ -1589,6 +1592,8 @@ Although ports are usually published by providing the __podman run__ option  [`-
 
 </details>
 
+For details, see `-t` (`--tcp-ports`) [option](https://passt.top/builds/latest/web/passt.1.html#t~2)
+
 #### example: use pasta option `-t auto` to let pasta detect listening sockets
 
 Let pasta check once a second for new listening sockets (TCP or UDP) in the container and automatically publish them.
@@ -1638,6 +1643,8 @@ Use `--network=pasta:-t,auto`
    ```
 
 </details>
+
+For details, see `-t` (`--tcp-ports`) [option](https://passt.top/builds/latest/web/passt.1.html#t~2)
 
 __Side note__: Pasta does not publish TCP ports below [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start).
 
@@ -2002,10 +2009,10 @@ see the troubleshooting tip
 
 `Network=pasta` is the default value when using rootless Podman.
 
-Pasta options such as `--map-gw` can be specified:
+Pasta options such as `--map-host-loopback=11.11.11.11` can be specified:
 
 ```
-Network=pasta:--map-gw
+Network=pasta:--map-host-loopback=11.11.11.11
 ```
 
 ### Connect to a custom network with `Network=mynet.network`
@@ -3165,7 +3172,7 @@ Documentation relevant to Podman 5.2.2 and earlier versions
 
 ### About the pasta option __--map-guest-addr__
 
-Podman 5.3.0 or later sets the pasta option __--map-guest-addr__ by default.
+Podman 5.3.0 or later sets the pasta option [__--map-guest-addr__](https://passt.top/builds/latest/web/passt.1.html#map-guest-addr) by default.
 
 If you are runnning an earlier Podman version, you could try to enable it yourself.
 
