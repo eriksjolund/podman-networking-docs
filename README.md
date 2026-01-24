@@ -1070,7 +1070,7 @@ For details, see [`--map-host-loopback`](https://passt.top/builds/latest/web/pas
 
 #### example: connect to host's localhost using the pasta option `--tcp-ns` (`-T`)
 
-For better performance and security, pasta offers an alternative to using `--map-gw`.
+For better performance, pasta offers an alternative to using `--map-gw`.
 The `-T` (`--tcp-ns`) [option](https://passt.top/builds/latest/web/passt.1.html#T) configures TCP port
 forwarding from the container network namespace to the init network namespace.
 
@@ -1081,6 +1081,17 @@ podman run --rm \
 ```
 
 (Instead of the port number 8081, it would also have been possible to specify the port number 8080)
+
+> [!WARNING]
+> The client in the container connects to `127.0.0.1`. The server on the host
+will see the TCP connection as coming from address `127.0.0.1`. This is a security risk if the
+client or server software trusts localhost (`127.0.0.1`) connections in some way.
+
+See also [comment](https://archives.passt.top/passt-user/20251221114722.2a613e94@elisabeth/) about `--tcp-ns` by a pasta developer on the passt-user mailing list.
+
+Quote:
+
+> making connections appear as if they were local is risky making connections appear as if they were local is risky (compare CVE-2021-20199), so it's disabled by default
 
 For more information about how to use pasta to connect to a service running on the host, see [GitHub comment](https://github.com/containers/podman/issues/22653#issuecomment-2108922749).
 
