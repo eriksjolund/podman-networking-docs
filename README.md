@@ -24,6 +24,8 @@ Listening TCP/UDP sockets
 | slirp4netns + port_handler=rootlesskit | | | | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start) |
 | host | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | [ip_unprivileged_port_start](https://github.com/eriksjolund/podman-networking-docs#configure-ip_unprivileged_port_start) |
 
+Support for source address preserved for pasta + custom network is under development (see [PR 28478](https://github.com/containers/podman/pull/28478)).
+
 ## Valid method combinations
 
 The methods
