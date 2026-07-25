@@ -873,11 +873,34 @@ An example of an outbound TCP/UDP connection to the internet
 is when a container downloads a file from a
 web server on the internet.
 
-| method | native performance |
+The `Network=` setting in container units (which translates into the `podman run` option `--network`)
+determines whether a container can connect to the internet.
+
+If a container unit does not have any `Network=` line under the `[Container]` section,
+then the container can connect to the internet (because `pasta` is the default value).
+
+If a container unit only has one `Network=` line under the `[Container]` section, then see the following table:
+
+| value for `Network=`    | can connect to the internet | comment |
+| --                      |                --           | --      |
+| `none`                  |                             |         |
+| `pasta`                 | :heavy_check_mark:          | `pasta` is the default value |
+| `host`                  | :heavy_check_mark:          |         |
+| network name for a custom network with `Internal=true` | | Instead of the network name, the filename of the network unit can also be specified |
+| network name for a custom network with `Internal=false` | :heavy_check_mark: | Instead of the network name, the filename of the network unit can also be specified |
+
+If a container unit has multiple `Network=` lines under the `[Container]` section,
+then the container can connect to the internet if at least one of the specified network names
+is for a custom network with `Internal=false`.
+
+Network performance for outbound TCP/UDP connections to the internet:
+
+| value for `Network=` | native performance |
 |-|-|
-| pasta | |
-| slirp4netns | |
-| host | :heavy_check_mark: |
+| `pasta` | |
+| `slirp4netns` | |
+| network name for a custom network | |
+| `host` | :heavy_check_mark: |
 
 ## Outbound TCP/UDP connections to the host's localhost
 
