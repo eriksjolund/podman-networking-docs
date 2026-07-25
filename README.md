@@ -902,6 +902,99 @@ Network performance for outbound TCP/UDP connections to the internet:
 | network name for a custom network | |
 | `host` | :heavy_check_mark: |
 
+__Side note:__ It is possible to connect to the internet before executing `podman run`
+and then pass the connected socket with [`--preserve-fds`](https://docs.podman.io/en/latest/markdown/podman-run.1.html#preserve-fds-n).
+This works even for `--network=none` and has native network performance, but the container software
+needs to be adapted to make use of this.
+
+#### example: connect to the internet before starting podman
+
+<details>
+  <summary>Click me</summary>
+
+> [!NOTE]
+> This demo shows the advanced technical possibilities of Podman.
+> This is a niche feature not needed by most people.
+
+Show how to download the URL http://podman.io with Bash
+
+1. Create file _test1.bash_ containing
+   ```
+   #!/bin/bash
+   
+   exec 3<>/dev/tcp/podman.io/80
+   
+   echo -en "GET / HTTP/1.1\r\n" >&3
+   echo -en "Host: podman.io\r\n" >&3
+   echo -en "Content-Length: 0\r\n" >&3
+   echo -en "Connection: close\r\n\r\n" >&3
+   
+   cat <&3
+   ```
+2. Run the script and show the first 5 lines of the output
+   ```
+   bash test1.bash | head -5
+   ```
+   The following output is printed
+   ```
+   HTTP/1.1 200 OK
+   Connection: close
+   Content-Length: 26526
+   Server: GitHub.com
+   Content-Type: text/html; charset=utf-8
+   ```
+   __result__: The web server succesfully replied to the HTTP request.
+
+Show how to download the URL http://podman.io with Bash and Podman. Use `--network=host`
+and `--preserve-fds=1`.
+Bash creates the TCP socket and connects to podman.io:80 before executing __podman run__.
+
+1. Create file _test2.bash_ containing
+   ```
+   #!/bin/bash
+   
+   exec 3<>/dev/tcp/podman.io/80
+   
+   podman run \
+     --rm \
+     --network=host \
+     --preserve-fds=1 \
+     docker.io/library/alpine \
+       /bin/sh -c 'echo -en "GET / HTTP/1.1\r\n" >&3
+                   echo -en "Host: podman.io\r\n" >&3
+                   echo -en "Content-Length: 0\r\n" >&3
+                   echo -en "Connection: close\r\n\r\n" >&3
+                   cat <&3' <&3
+   ```
+2. Run the script and show the first 5 lines of the output
+   ```
+   bash test2.bash | head -5
+   ```
+   The following output is printed
+   ```
+   HTTP/1.1 200 OK
+   Connection: close
+   Content-Length: 26526
+   Server: GitHub.com
+   Content-Type: text/html; charset=utf-8
+   ```
+   __result__: The web server succesfully replied to the HTTP request.
+
+Thanks to the fork/exec model of Podman, the socket will be first
+inherited by conmon and then by the OCI runtime and finally by the container
+as can be seen in the following diagram:
+
+``` mermaid
+stateDiagram-v2
+    bash --> podman: socket inherited via fork/exec
+    state "OCI runtime" as s2
+    podman --> conmon: socket inherited via double fork/exec
+    conmon --> s2: socket inherited via fork/exec
+    s2 --> container: socket inherited via exec
+```
+
+</details>
+
 ## Outbound TCP/UDP connections to the host's localhost
 
 An example of an outbound TCP/UDP connection to the host's localhost
