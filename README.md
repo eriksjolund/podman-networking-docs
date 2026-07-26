@@ -865,9 +865,9 @@ systemctl --user start app1.service
 systemctl --user start app2.service
 ```
 
-## Outbound TCP/UDP connections
+# Outbound TCP/UDP connections
 
-### Outbound TCP/UDP connections to the internet
+## Outbound TCP/UDP connections to the internet
 
 An example of an outbound TCP/UDP connection to the internet
 is when a container downloads a file from a
