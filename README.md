@@ -902,6 +902,160 @@ Network performance for outbound TCP/UDP connections to the internet:
 | network name for a custom network | |
 | `host` | :heavy_check_mark: |
 
+__Side note:__ Inherited connected sockets from the host also have native performance. 
+
+### Podman can inherit a connected socket
+
+> [!NOTE]
+> Inheriting connected sockets is a niche feature. Few people will have a need for this feature.
+
+The command `podman run` without the `--remote` option starts a container with fork/exec.
+As file descriptors are inherited by child processes, the parent process (in this case the process that is executing `podman run`)
+can create a network socket and connect it before executing the child process (that is `podman run`).
+
+Podman closes the inherited socket, unless either
+
+* the `podman run` option [`--preserve-fds=1`](https://docs.podman.io/en/latest/markdown/podman-run.1.html#preserve-fds-n) is set
+* the environment variable `LISTEN_FDS=1` is set
+
+For details, see the two following examples
+
+#### example: connect to the internet in Bash before starting Podman
+
+Create and connect a TCP socket in Bash. Use the `podman run` option
+[`--preserve-fds`](https://docs.podman.io/en/latest/markdown/podman-run.1.html#preserve-fds-n)
+to let the container inherit the connected socket.
+
+<details>
+  <summary>Click me</summary>
+
+Show how to download the URL http://podman.io with Bash and Podman. Use `--network=host`
+and `--preserve-fds=1`.
+Bash creates the TCP socket and connects to podman.io:80 before executing __podman run__.
+
+1. Create file _test.bash_ containing
+   ```
+   #!/bin/bash
+   
+   exec 3<>/dev/tcp/podman.io/80
+   
+   podman run \
+     --rm \
+     --network=host \
+     --preserve-fds=1 \
+     docker.io/library/alpine \
+       /bin/sh -c 'echo -en "GET / HTTP/1.1\r\n" >&3
+                   echo -en "Host: podman.io\r\n" >&3
+                   echo -en "Content-Length: 0\r\n" >&3
+                   echo -en "Connection: close\r\n\r\n" >&3
+                   cat <&3' <&3
+   ```
+2. Run the script and show the first 5 lines of the output
+   ```
+   bash test.bash | head -5
+   ```
+   The following output is printed
+   ```
+   HTTP/1.1 200 OK
+   Connection: close
+   Content-Length: 26526
+   Server: GitHub.com
+   Content-Type: text/html; charset=utf-8
+   ```
+   __result__: The web server successfully replied to the HTTP request.
+
+Thanks to the fork/exec model of Podman, the socket will be first
+inherited by conmon and then by the OCI runtime and finally by the container
+as can be seen in the following diagram:
+
+
+``` mermaid
+stateDiagram-v2
+    bash --> podman: socket inherited via fork/exec
+    state "OCI runtime" as s2
+    podman --> conmon: socket inherited via double fork/exec
+    conmon --> s2: socket inherited via fork/exec
+    s2 --> container: socket inherited via exec
+```
+
+</details>
+
+#### example: connect to the internet in quadlet before starting Podman
+
+In `ExecStartPre=` under the `[Service]` section create and connect
+the socket and pass the socket to the [systemd file descriptor store](https://systemd.io/FILE_DESCRIPTOR_STORE/)
+with [`systemd-notify`](https://www.freedesktop.org/software/systemd/man/latest/systemd-notify.html).
+Networking is restricted by adding `Network=none` under
+the `[Container]` section and
+`RestrictAddressFamilies=AF_UNIX AF_NETLINK` under
+the `[Service]` section.
+
+<details>
+  <summary>Click me</summary>
+
+Using `RestrictAddressFamilies=` in this example is optional.
+Adding `RestrictAddressFamilies=AF_UNIX AF_NETLINK` under
+the `[Service]` section restricts networking for podman
+so that pulling container images is no longer possible.
+`ExecStartPre=` has a value that starts with `+`, which is
+one of the systemd special executable prefixes.
+For details, see [systemd.service(5)](https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html?#Command%20lines).
+By using `+` the `ExecStartPre=` is not restricted by
+the `RestrictAddressFamilies` setting.
+
+(systemd 261 was used when writing this example. TODO: check if the example works with earlier systemd versions)
+
+1. Pull container image
+   ```
+   podman pull docker.io/library/alpine
+   ```
+2. Create directory
+   ```
+   mkdir -p ~/.config/containers/systemd
+   ```
+3. Create file _~/.config/containers/systemd/mytest.container_ containing
+   ```
+   [Service]
+   RestrictAddressFamilies=AF_UNIX AF_NETLINK
+   ExecStartPre=+sh -c "exec 3<>/dev/tcp/podman.io/80 ; systemd-notify --fd=3 --fdname=foobar"
+   FileDescriptorStoreMax=1
+   
+   # According to https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#RestrictAddressFamilies=
+   # it is recommended to combine RestrictAddressFamilies= with SystemCallArchitectures=native
+   SystemCallArchitectures=native
+   
+   [Container]
+   Network=none
+   Pull=never
+   Image=docker.io/library/alpine
+   
+   Exec=/bin/sh -c 'echo -en "GET / HTTP/1.1\r\n" >&3 ; echo -en "Host: podman.io\r\n" >&3  ; echo -en "Content-Length: 0\r\n" >&3 ; echo -en "Connection: close\r\n\r\n" >&3 ; cat <&3 ; trap "exit 0" SIGTERM; sleep inf & wait $!'
+   ```
+   The string `foobar` was arbitrarily chosen.
+
+
+Note that `RestrictAddressFamilies=` is only supported for certain CPU architectures.
+For details, see [systemd.exec(5)](https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#RestrictAddressFamilies=).
+
+Note that `--preserve-fds` is not used in this example because the socket file descriptor is temporarily stored in the [systemd file descriptor store](https://systemd.io/FILE_DESCRIPTOR_STORE/).
+Podman inherits the socket file descriptor in the same way as file descriptors are inherited when using socket activation or `OpenFile=`. Systemd sets the environment variables `LISTEN_FDS` and `LISTEN_FDNAMES` when executing `podman run`.
+
+``` mermaid
+stateDiagram-v2
+    state "systemd" as systemd
+    state "systemd-notify" as systemdnotify
+    systemd --> sh: 1. fork/exec
+    sh --> systemdnotify: 2. socket inherited via fork/exec
+    systemdnotify --> systemd: 3. socket passed via SCM_RIGHTS
+    systemd --> podman: 4. socket inherited via fork/exec
+    state "OCI runtime" as s2
+    podman --> conmon: 5. socket inherited via double fork/exec
+    conmon --> s2: 6. socket inherited via fork/exec
+    s2 --> container: 7. socket inherited via exec
+```
+
+</details>
+
 ## Outbound TCP/UDP connections to the host's localhost
 
 An example of an outbound TCP/UDP connection to the host's localhost
