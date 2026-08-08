@@ -260,7 +260,7 @@ In other words, replace step 4 with
    Create the file _/home/test/.config/containers/systemd/mynet.network_ containing
    ```
    [Network]
-   Options=isolate=true
+   Options=isolate=strict
    ```
 
 At step 9 you will see that the source address __is not preserved__. Instead of 192.0.2.10 (IP address for _host1.example.com_),
@@ -335,7 +335,7 @@ Note, this is a rather experimental approach.
    ```
    [Network]
    Internal=true
-   Options=isolate=true
+   Options=isolate=strict
    ```
 6. Create the file _~/.config/systemd/user/myweb.socket_ with the contents
    ```
@@ -2281,7 +2281,7 @@ with
 `$HOME/.config/containers/systemd/mynet.network`
 ```
 [Network]
-Options=isolate=true
+Options=isolate=strict
 NetworkName=mynet
 ```
 
@@ -2469,13 +2469,13 @@ podman run --rm --network net1 --network net2 docker.io/library/nginx
    ```
    [Network]
    NetworkName=net1
-   Options=isolate=true
+   Options=isolate=strict
    ```
 2. Create file `$HOME/.config/containers/systemd/net2.network` containing
    ```
    [Network]
    NetworkName=net2
-   Options=isolate=true
+   Options=isolate=strict
    ```
 3. Create file `$HOME/.config/containers/systemd/nginx.container` containing
    ```
@@ -2512,11 +2512,11 @@ For network quadlets add `Internal=true`
 Internal=true
 ```
 
-You can combine this setting with `Options=isolate=true`
+You can combine this setting with `Options=isolate=strict`
 ```
 [Network]
 Internal=true
-Options=isolate=true
+Options=isolate=strict
 ```
 
 A container connected to an internal custom network can have TCP/UDP sockets listening to the internet
@@ -3326,7 +3326,7 @@ to support debug logging. Create a wrapper script that sets the environment vari
 2. Create file _~/.config/containers/systemd/mynet.network_ containing
    ```
    [Network]
-   Options=isolate=true
+   Options=isolate=strict
    ```
 3. Create file _~/.config/containers/systemd/whoami.container_ containing
    ```
