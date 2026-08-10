@@ -2375,8 +2375,9 @@ For example
 podman network create --opt=isolate=strict mynet
 ```
 
-The other alternatives `isolate=true` (the default value) and `isolate=false`
-provide less isolation than `isolate=strict`.
+The other alternatives `isolate=true` and `isolate=false`
+provide less isolation than `isolate=strict`. For podman 6.0 and later,
+the default value is `isolate=strict`.
 
 The following table shows allowed traffic between two custom networks
 for different `isolate` values.
