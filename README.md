@@ -75,7 +75,7 @@ For example, if the nginx container is run with __slirp4netns + port_handler=roo
 podman run --network=slirp4netns:port_handler=rootlesskit \
            --publish 8080:80 \
            --rm \
-           ghcr.io/nginxinc/nginx:latest
+           docker.io/library/nginx:latest
 ```
 
 nginx logs the HTTP request as coming from _10.0.2.2_
@@ -110,7 +110,7 @@ This example uses two computers
 4. Create the file _/home/test/.config/containers/systemd/nginx.container_ containing
    ```
    [Container]
-   Image=ghcr.io/nginxinc/nginx-unprivileged:latest
+   Image=ghcr.io/nginx/nginx-unprivileged:latest
    ContainerName=mynginx
    Environment="NGINX=3;"
    
@@ -134,7 +134,7 @@ This example uses two computers
    ```
 7. Pull the container image
    ```
-   podman pull ghcr.io/nginxinc/nginx-unprivileged:latest
+   podman pull ghcr.io/nginx/nginx-unprivileged:latest
    ```
 8. Start the socket
    ```
@@ -189,7 +189,7 @@ This example uses two computers
 4. Create the file _/home/test/.config/containers/systemd/nginx.container_ containing
    ```
    [Container]
-   Image=ghcr.io/nginxinc/nginx-unprivileged:latest
+   Image=ghcr.io/nginx/nginx-unprivileged:latest
    ContainerName=mynginx
    Network=pasta
    PublishPort=0.0.0.0:8080:8080
@@ -203,7 +203,7 @@ This example uses two computers
    ```
 6. Pull the container image
    ```
-   podman pull ghcr.io/nginxinc/nginx-unprivileged:latest
+   podman pull ghcr.io/nginx/nginx-unprivileged:latest
    ```
 7. Start the service
    ```
@@ -249,7 +249,7 @@ In other words, replace step 4 with
 4. Create the file _/home/test/.config/containers/systemd/nginx.container_ containing
    ```
    [Container]
-   Image=ghcr.io/nginxinc/nginx-unprivileged:latest
+   Image=ghcr.io/nginx/nginx-unprivileged:latest
    ContainerName=mynginx
    Network=mynet.network
    PublishPort=0.0.0.0:8080:8080
@@ -408,7 +408,7 @@ In other words, replace step 4 with
 4. Create the file _/home/test/.config/containers/systemd/nginx.container_ containing
    ```
    [Container]
-   Image=ghcr.io/nginxinc/nginx-unprivileged:latest
+   Image=ghcr.io/nginx/nginx-unprivileged:latest
    ContainerName=mynginx
    Network=slirp4netns:port_handler=slirp4netns
    PublishPort=0.0.0.0:8080:8080
@@ -439,7 +439,7 @@ In other words, replace step 4 with
 4. Create the file _/home/test/.config/containers/systemd/nginx.container_ containing
    ```
    [Container]
-   Image=ghcr.io/nginxinc/nginx-unprivileged:latest
+   Image=ghcr.io/nginx/nginx-unprivileged:latest
    ContainerName=mynginx
    Network=slirp4netns:port_handler=rootlesskit
    PublishPort=0.0.0.0:8080:8080
@@ -481,7 +481,7 @@ In other words, replace step 4 with
 4. Create the file _/home/test/.config/containers/systemd/nginx.container_ containing
    ```
    [Container]
-   Image=ghcr.io/nginxinc/nginx-unprivileged:latest
+   Image=ghcr.io/nginx/nginx-unprivileged:latest
    ContainerName=mynginx
    Network=host
    
@@ -588,7 +588,7 @@ For example the file _/home/test/.config/containers/systemd/nginx.container_ con
 
    ```
    [Container]
-   Image=ghcr.io/nginxinc/nginx-unprivileged:latest
+   Image=ghcr.io/nginx/nginx-unprivileged:latest
    ContainerName=mynginx
    Network=pasta:-t,0.0.0.0%%eth0/8080:8080
    
@@ -1349,7 +1349,7 @@ Requirement: Podman installed on the host
    After=nginx.socket
    
    [Container]
-   Image=ghcr.io/nginxinc/nginx-unprivileged
+   Image=ghcr.io/nginx/nginx-unprivileged
    Environment=NGINX=3;
    Network=none
    Volume=%h/nginx_conf_d:/etc/nginx/conf.d:Z
@@ -1377,7 +1377,7 @@ Requirement: Podman installed on the host
    ```
    The file contents were created with the command
    ```
-   podman run --rm ghcr.io/nginxinc/nginx-unprivileged /bin/bash -c 'cat /etc/nginx/conf.d/default.conf | grep -v \# | sed "s/listen\s\+8080;/listen 192.168.10.108:8080;/g" | sed "s/  localhost/ example.com/g" | sed /^[[:space:]]*$/d' > default.conf
+   podman run --rm ghcr.io/nginx/nginx-unprivileged /bin/bash -c 'cat /etc/nginx/conf.d/default.conf | grep -v \# | sed "s/listen\s\+8080;/listen 192.168.10.108:8080;/g" | sed "s/  localhost/ example.com/g" | sed /^[[:space:]]*$/d' > default.conf
    ```
    Note, `192.168.10.108` is the previously detected IP address of the host's main network interface.
    The IP address is used in the value for the nginx configuration directive `listen`.
@@ -1391,7 +1391,7 @@ Requirement: Podman installed on the host
     ```
 11. Pull the container image
     ```
-    podman pull ghcr.io/nginxinc/nginx-unprivileged
+    podman pull ghcr.io/nginx/nginx-unprivileged
     ```
 12. Start the socket
     ```
